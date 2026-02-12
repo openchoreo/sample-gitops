@@ -10,6 +10,14 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
+# editor and IDE paraphernalia
+.idea
+.vscode
+*.swp
+*.swo
+*~
+*.tgz
+
 # Package Files #
 *.jar
 *.war
