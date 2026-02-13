@@ -5,9 +5,9 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./namespaces/oc-demo/projects
+  path: ./namespaces/default/projects
   prune: true
-  targetNamespace: oc-demo
+  targetNamespace: default
   sourceRef:
     kind: GitRepository
     name: sample-gitops

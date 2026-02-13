@@ -1,9 +1,0 @@
-apiVersion: openchoreo.dev/v1alpha1
-kind: BuildPlane
-metadata:
-  name: default
-spec:
-  planeID: "default-buildplane"
-  clusterAgent:
-    clientCA:
-      value: ""
