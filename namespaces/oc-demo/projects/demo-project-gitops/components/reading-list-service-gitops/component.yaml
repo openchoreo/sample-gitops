@@ -1,0 +1,39 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: reading-list-service-gitops
+spec:
+  owner:
+    projectName: demo-project-gitops
+
+  # References the ComponentType
+  componentType: deployment/service
+
+  autoDeploy: true
+
+  # Component Workflow configuration (developer-provided)
+  workflow:
+    # Reference to ComponentWorkflow
+    name: google-cloud-buildpacks
+
+    # Required parameters required by the ComponentWorkflow
+    systemParameters:
+      repository:
+        url: "https://github.com/openchoreo/sample-workloads"
+        revision:
+          branch: "main"
+          # Optional commit hash, should be a valid git commit
+          # commit: ""
+        appPath: "/service-go-reading-list"
+
+  parameters:
+    exposed: true
+    replicas: 1
+    port: 8080
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"

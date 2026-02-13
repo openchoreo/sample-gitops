@@ -1,0 +1,219 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ComponentRelease
+metadata:
+  name: postgres-20260209-1
+spec:
+  componentProfile:
+    parameters:
+      port: 5432
+      replicas: 1
+    traits:
+    - instanceName: data-storage
+      name: persistent-volume
+      parameters:
+        containerName: main
+        mountPath: /var/lib/postgresql/data
+        volumeName: pg-data
+  componentType:
+    resources:
+    - id: deployment
+      template:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.name}
+          namespace: ${metadata.namespace}
+        spec:
+          replicas: ${parameters.replicas}
+          selector:
+            matchLabels: ${metadata.podSelectors}
+          template:
+            metadata:
+              labels: ${metadata.podSelectors}
+            spec:
+              containers:
+              - args: |
+                  ${has(workload.containers[parameters.containerName].args) ? workload.containers[parameters.containerName].args : oc_omit()}
+                command: |
+                  ${has(workload.containers[parameters.containerName].command) ? workload.containers[parameters.containerName].command : oc_omit()}
+                envFrom: ${configurations.toContainerEnvFrom(parameters.containerName)}
+                image: ${workload.containers[parameters.containerName].image}
+                imagePullPolicy: ${parameters.imagePullPolicy}
+                name: ${parameters.containerName}
+                ports:
+                - containerPort: ${parameters.port}
+                  name: tcp
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: ${envOverrides.resources.limits.cpu}
+                    memory: ${envOverrides.resources.limits.memory}
+                  requests:
+                    cpu: ${envOverrides.resources.requests.cpu}
+                    memory: ${envOverrides.resources.requests.memory}
+                volumeMounts: ${configurations.toContainerVolumeMounts(parameters.containerName)}
+              volumes: ${configurations.toVolumes()}
+    - id: service
+      template:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.componentName}
+          namespace: ${metadata.namespace}
+        spec:
+          ports:
+          - name: tcp
+            port: ${parameters.port}
+            protocol: TCP
+            targetPort: ${parameters.port}
+          selector: ${metadata.podSelectors}
+          type: ClusterIP
+    - forEach: ${configurations.toConfigEnvsByContainer()}
+      id: env-config
+      template:
+        apiVersion: v1
+        data: |
+          ${envConfig.envs.transformMapEntry(index, env, {env.name: env.value})}
+        kind: ConfigMap
+        metadata:
+          name: ${envConfig.resourceName}
+          namespace: ${metadata.namespace}
+      var: envConfig
+    - forEach: ${configurations.toConfigFileList()}
+      id: file-config
+      template:
+        apiVersion: v1
+        data:
+          ${config.name}: |
+            ${config.value}
+        kind: ConfigMap
+        metadata:
+          name: ${config.resourceName}
+          namespace: ${metadata.namespace}
+      var: config
+    - forEach: ${configurations.toSecretEnvsByContainer()}
+      id: secret-env-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${secretEnv.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data: |
+            ${secretEnv.envs.map(secret, {
+              "secretKey": secret.name,
+              "remoteRef": {
+                "key": secret.remoteRef.key,
+                "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
+              }
+            })}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${secretEnv.resourceName}
+      var: secretEnv
+    - forEach: ${configurations.toSecretFileList()}
+      id: secret-file-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${file.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data:
+          - remoteRef:
+              key: ${file.remoteRef.key}
+              property: |
+                ${has(file.remoteRef.property) ? file.remoteRef.property : oc_omit()}
+            secretKey: ${file.name}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${file.resourceName}
+      var: file
+    schema:
+      envOverrides:
+        resources: ResourceRequirements | default={}
+      parameters:
+        containerName: string | default=main
+        imagePullPolicy: string | default=IfNotPresent
+        port: integer | default=5432
+        replicas: integer | default=1
+      types:
+        ResourceQuantity:
+          cpu: string | default=100m
+          memory: string | default=256Mi
+        ResourceRequirements:
+          limits: ResourceQuantity | default={}
+          requests: ResourceQuantity | default={}
+    workloadType: deployment
+  owner:
+    componentName: postgres
+    projectName: doclet
+  traits:
+    persistent-volume:
+      creates:
+      - template:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: ${metadata.name}-${trait.instanceName}
+            namespace: ${metadata.namespace}
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: ${envOverrides.size}
+            storageClassName: ${envOverrides.storageClass}
+      patches:
+      - operations:
+        - op: add
+          path: /spec/template/spec/volumes/-
+          value:
+            name: ${parameters.volumeName}
+            persistentVolumeClaim:
+              claimName: ${metadata.name}-${trait.instanceName}
+        target:
+          group: apps
+          kind: Deployment
+          version: v1
+      - operations:
+        - op: add
+          path: /spec/template/spec/containers/[?(@.name=='${parameters.containerName}')]/volumeMounts/-
+          value:
+            mountPath: ${parameters.mountPath}
+            name: ${parameters.volumeName}
+        target:
+          group: apps
+          kind: Deployment
+          version: v1
+      schema:
+        envOverrides:
+          size: string | default=1Gi
+          storageClass: string | default=local-path
+        parameters:
+          containerName: string | default=main
+          mountPath: string
+          volumeName: string
+  workload:
+    containers:
+      main:
+        env:
+        - key: POSTGRES_USER
+          value: doclet
+        - key: POSTGRES_PASSWORD
+          value: doclet
+        - key: POSTGRES_DB
+          value: doclet
+        image: postgres:16-alpine

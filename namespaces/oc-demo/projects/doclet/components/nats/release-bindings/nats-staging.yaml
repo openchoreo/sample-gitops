@@ -1,0 +1,10 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: nats-staging
+spec:
+  environment: staging
+  owner:
+    componentName: nats
+    projectName: doclet
+  releaseName: nats-20260209-1

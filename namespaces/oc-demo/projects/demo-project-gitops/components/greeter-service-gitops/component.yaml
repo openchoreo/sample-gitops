@@ -1,0 +1,26 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: greeter-service-gitops
+spec:
+  owner:
+    projectName: demo-project-gitops
+  componentType: deployment/service
+  workflow:
+    name: docker-gitops
+    systemParameters:
+      repository:
+        url: "https://github.com/VajiraPrabuddhaka/oc-sample-workloads"
+        revision:
+          branch: "main"
+        appPath: "/service-go-greeter"
+    parameters:
+      docker:
+        context: "/service-go-greeter"
+        filePath: "/service-go-greeter/Dockerfile"
+      gitops:
+        repositoryUrl: "https://github.com/VajiraPrabuddhaka/openchoreo-sample-gitops"
+        branch: "main"
+        credentialsRef: "gitops-repo-credentials"
+        githubTokenRef: "github-api-token"
+        workflowName: "gitops-release"

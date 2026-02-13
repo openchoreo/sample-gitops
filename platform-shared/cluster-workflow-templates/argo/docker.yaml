@@ -1,0 +1,329 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: docker
+spec:
+  entrypoint: build-workflow
+  arguments:
+    parameters:
+      - name: docker-context
+      - name: dockerfile-path
+  templates:
+    - name: build-workflow
+      steps:
+        - - name: checkout-source
+            template: checkout-source
+        - - name: build-image
+            template: build-image
+            arguments:
+              parameters:
+                - name: git-revision
+                  value: '{{ "{{" }}steps.checkout-source.outputs.parameters.git-revision{{ "}}" }}'
+        - - name: publish-image
+            template: publish-image
+            arguments:
+              parameters:
+                - name: git-revision
+                  value: '{{ "{{" }}steps.checkout-source.outputs.parameters.git-revision{{ "}}" }}'
+        - - name: generate-workload-cr
+            template: generate-workload-cr
+            arguments:
+              parameters:
+                - name: image
+                  value: '{{ "{{" }}steps.publish-image.outputs.parameters.image{{ "}}" }}'
+    - name: checkout-source
+      outputs:
+        parameters:
+          - name: git-revision
+            valueFrom:
+              path: /tmp/git-revision.txt
+      volumes:
+        - name: git-secret
+          secret:
+            secretName: '{{ "{{" }}workflow.parameters.git-secret{{ "}}" }}'
+            optional: true
+      container:
+        args:
+          - |-
+            set -e
+
+            #####################################################################
+            # 1. Initialize variables
+            #####################################################################
+            BRANCH={{ "{{" }}workflow.parameters.branch{{ "}}" }}
+            REPO_URL={{ "{{" }}workflow.parameters.git-repo{{ "}}" }}
+            COMMIT={{ "{{" }}workflow.parameters.commit{{ "}}" }}
+
+            #####################################################################
+            # 2. Read authentication token
+            #####################################################################
+            TOKEN_FILE="/etc/secrets/git-secret/git-token"
+            GIT_TOKEN=""
+            if [ -f "$TOKEN_FILE" ]; then
+              GIT_TOKEN="$(cat "$TOKEN_FILE")"
+            fi
+
+            #####################################################################
+            # 3. Build authenticated repository URL
+            #####################################################################
+            CLONE_URL="$REPO_URL"
+            if [ -n "$GIT_TOKEN" ]; then
+              case "$REPO_URL" in
+                https://*)
+                  HOST=$(echo "$REPO_URL" | sed -E 's|https://([^/]+)/.*|\1|')
+                  REPO_PATH=$(echo "$REPO_URL" | sed -E 's|https://[^/]+/(.*)|\1|')
+                  ;;
+                git@*)
+                  HOST=$(echo "$REPO_URL" | sed -E 's|git@([^:]+):.*|\1|')
+                  REPO_PATH=$(echo "$REPO_URL" | sed -E 's|git@[^:]+:(.*)|\1|')
+                  ;;
+              esac
+
+              # Map host to authentication prefix
+              case "$HOST" in
+                github.com)    AUTH_PREFIX="x-access-token" ;;
+                gitlab.com)    AUTH_PREFIX="oauth2" ;;
+                bitbucket.org) AUTH_PREFIX="x-token-auth" ;;
+                *)             AUTH_PREFIX="" ;;
+              esac
+
+              if [ -n "$AUTH_PREFIX" ]; then
+                CLONE_URL="https://${AUTH_PREFIX}:${GIT_TOKEN}@${HOST}/${REPO_PATH}"
+              fi
+            fi
+
+            echo "Cloning repository..."
+
+            #####################################################################
+            # 4. Clone repository
+            #####################################################################
+            if [[ -n "$COMMIT" ]]; then
+                echo "Cloning specific commit: $COMMIT"
+                git clone --no-checkout --depth 1 "$CLONE_URL" /mnt/vol/source
+                cd /mnt/vol/source
+                git config --global advice.detachedHead false
+                git fetch --depth 1 origin "$COMMIT"
+                git checkout "$COMMIT"
+                echo -n "$COMMIT" | cut -c1-8 > /tmp/git-revision.txt
+            else
+                echo "Cloning branch: $BRANCH with latest commit"
+                git clone --single-branch --branch $BRANCH --depth 1 "$CLONE_URL" /mnt/vol/source
+                cd /mnt/vol/source
+                COMMIT_SHA=$(git rev-parse HEAD)
+                echo -n "$COMMIT_SHA" | cut -c1-8 > /tmp/git-revision.txt
+            fi
+        command:
+          - sh
+          - -c
+        image: alpine/git
+        name: ""
+        volumeMounts:
+          - mountPath: /mnt/vol
+            name: workspace
+          - mountPath: /etc/secrets/git-secret
+            name: git-secret
+            readOnly: true
+    - name: build-image
+      inputs:
+        parameters:
+          - name: git-revision
+      container:
+        args:
+          - |-
+            set -e
+
+            WORKDIR=/mnt/vol/source
+            IMAGE="{{ "{{" }}workflow.parameters.image-name{{ "}}" }}:{{ "{{" }}workflow.parameters.image-tag{{ "}}" }}-{{ "{{" }}inputs.parameters.git-revision{{ "}}" }}"
+            DOCKER_CONTEXT="{{ "{{" }}workflow.parameters.docker-context{{ "}}" }}"
+            DOCKERFILE_PATH="{{ "{{" }}workflow.parameters.dockerfile-path{{ "}}" }}"
+
+            #####################################################################
+            # 1.  Podman daemon + storage.conf
+            #####################################################################
+            mkdir -p /etc/containers
+            cat > /etc/containers/storage.conf <<EOF
+            [storage]
+            driver = "overlay"
+            runroot = "/run/containers/storage"
+            graphroot = "/var/lib/containers/storage"
+            [storage.options.overlay]
+            mount_program = "/usr/bin/fuse-overlayfs"
+            EOF
+
+            #####################################################################
+            # 2.  Docker Build
+            #####################################################################
+            podman build -t $IMAGE -f $WORKDIR/$DOCKERFILE_PATH $WORKDIR/$DOCKER_CONTEXT
+            podman save -o /mnt/vol/app-image.tar $IMAGE
+        command:
+          - sh
+          - -c
+        image: ghcr.io/openchoreo/podman-runner:v1.0
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - mountPath: /mnt/vol
+            name: workspace
+    - name: publish-image
+      inputs:
+        parameters:
+          - name: git-revision
+      outputs:
+        parameters:
+          - name: image
+            valueFrom:
+              path: /tmp/image.txt
+      volumes:
+        - name: registry-push-secret
+          secret:
+            optional: true
+            secretName: '{{ "{{" }}workflow.parameters.registry-push-secret{{ "}}" }}'
+      container:
+        args:
+          - |-
+            set -e
+            #####################################################################
+            # 1. Inputs
+            #####################################################################
+            GIT_REVISION={{ "{{" }}inputs.parameters.git-revision{{ "}}" }}
+            IMAGE_NAME={{ "{{" }}workflow.parameters.image-name{{ "}}" }}
+            IMAGE_TAG={{ "{{" }}workflow.parameters.image-tag{{ "}}" }}
+            SRC_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}-${GIT_REVISION}"
+
+            #####################################################################
+            # 2. Registry
+            #####################################################################
+            REGISTRY_ENDPOINT="{{ include "openchoreo-build-plane.registryEndpoint" . }}"
+            AUTH_FILE="/etc/secrets/registry-push-secret/.dockerconfigjson"
+
+            #####################################################################
+            # 3. Podman storage configuration
+            #####################################################################
+            mkdir -p /etc/containers
+            cat <<EOF > /etc/containers/storage.conf
+            [storage]
+            driver = "overlay"
+            runroot = "/run/containers/storage"
+            graphroot = "/var/lib/containers/storage"
+            [storage.options.overlay]
+            mount_program = "/usr/bin/fuse-overlayfs"
+            EOF
+
+            #####################################################################
+            # 4. Load the tarred image and push to registry
+            #####################################################################
+            podman load -i /mnt/vol/app-image.tar
+
+            podman tag $SRC_IMAGE $REGISTRY_ENDPOINT/$SRC_IMAGE
+
+            if [ -f "$AUTH_FILE" ]; then
+              podman push --tls-verify={{ .Values.global.defaultResources.registry.tlsVerify }} --authfile "$AUTH_FILE" $REGISTRY_ENDPOINT/$SRC_IMAGE
+            else
+              podman push --tls-verify={{ .Values.global.defaultResources.registry.tlsVerify }} $REGISTRY_ENDPOINT/$SRC_IMAGE
+            fi
+
+            #####################################################################
+            # 5. Emit image reference (for later steps/kubelet pulls)
+            #####################################################################
+            echo -n "$REGISTRY_ENDPOINT/$SRC_IMAGE" > /tmp/image.txt
+        command:
+          - sh
+          - -c
+        image: ghcr.io/openchoreo/podman-runner:v1.0
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - mountPath: /mnt/vol
+            name: workspace
+          - mountPath: /etc/secrets/registry-push-secret
+            name: registry-push-secret
+            readOnly: true
+    - name: generate-workload-cr
+      inputs:
+        parameters:
+          - name: image
+      outputs:
+        parameters:
+          - name: workload-cr
+            valueFrom:
+              path: /mnt/vol/workload-cr.yaml
+      container:
+        image: ghcr.io/openchoreo/podman-runner:v1.0
+        command: [ sh, -c ]
+        args:
+          - |-
+            set -e
+
+            #####################################################################
+            # 1. Initialize variables
+            #####################################################################
+            IMAGE={{ "{{" }}inputs.parameters.image{{ "}}" }}
+            PROJECT_NAME={{ "{{" }}workflow.parameters.project-name{{ "}}" }}
+            COMPONENT_NAME={{ "{{" }}workflow.parameters.component-name{{ "}}" }}
+            APP_PATH="{{ "{{" }}workflow.parameters.app-path{{ "}}" }}"
+
+            DESCRIPTOR_PATH="/mnt/vol/source${APP_PATH:+/${APP_PATH#/}}"
+
+            OUTPUT_PATH="/mnt/vol/workload-cr.yaml"
+
+            echo "Creating workload with image: ${IMAGE}"
+            echo "Using descriptor in: ${DESCRIPTOR_PATH}"
+
+            #####################################################################
+            # 2. Podman storage configuration
+            #####################################################################
+            mkdir -p /etc/containers
+            cat <<EOF > /etc/containers/storage.conf
+            [storage]
+            driver = "overlay"
+            runroot = "/run/containers/storage"
+            graphroot = "/var/lib/containers/storage"
+            [storage.options.overlay]
+            mount_program = "/usr/bin/fuse-overlayfs"
+            EOF
+
+            #####################################################################
+            # 3. Create workload CR and export to output
+            #####################################################################
+            # Check if workload.yaml exists and build the command accordingly
+            if [ -f "${DESCRIPTOR_PATH}/workload.yaml" ]; then
+              echo "Found workload.yaml descriptor, using it for workload creation"
+              podman run --rm --network=none \
+              -v $DESCRIPTOR_PATH:/app:rw -w /app \
+              ghcr.io/openchoreo/openchoreo-cli:{{ .Chart.AppVersion }} \
+                workload create \
+                --project "${PROJECT_NAME}" \
+                --component "${COMPONENT_NAME}" \
+                --image "${IMAGE}" \
+                --descriptor "workload.yaml" \
+                -o "workload-cr.yaml"
+            else
+              echo "No workload.yaml descriptor found, creating workload without descriptor"
+              podman run --rm --network=none \
+              -v $DESCRIPTOR_PATH:/app:rw -w /app \
+              ghcr.io/openchoreo/openchoreo-cli:{{ .Chart.AppVersion }} \
+                workload create \
+                --project "${PROJECT_NAME}" \
+                --component "${COMPONENT_NAME}" \
+                --image "${IMAGE}" \
+                -o "workload-cr.yaml"
+            fi
+
+            # Copy output CR to the shared volume
+            cp -f "${DESCRIPTOR_PATH}/workload-cr.yaml" "${OUTPUT_PATH}"
+        volumeMounts:
+          - name: workspace
+            mountPath: /mnt/vol
+        securityContext:
+          privileged: true
+  ttlStrategy:
+    secondsAfterCompletion: 3600
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi

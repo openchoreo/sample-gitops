@@ -1,0 +1,19 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Workload
+metadata:
+  name: frontend-workload
+spec:
+  containers:
+    main:
+      files:
+      - key: config.json
+        mountPath: /usr/share/nginx/html
+        value: |
+          {
+            "docServiceUrl": "http://default.development.openchoreoapis.localhost:19080/document-svc",
+            "collabWsUrl": "ws://default.development.openchoreoapis.localhost:19080/collab-svc/ws"
+          }
+      image: host.k3d.internal:10082/doclet-frontend-image:v1-27672a78
+  owner:
+    componentName: frontend
+    projectName: doclet

@@ -1,0 +1,10 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: frontend-development
+spec:
+  environment: development
+  owner:
+    componentName: frontend
+    projectName: doclet
+  releaseName: frontend-27672a78

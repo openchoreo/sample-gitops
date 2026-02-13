@@ -1,0 +1,10 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: postgres-staging
+spec:
+  environment: staging
+  owner:
+    componentName: postgres
+    projectName: doclet
+  releaseName: postgres-20260209-1

@@ -1,0 +1,21 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: frontend-staging
+spec:
+  environment: staging
+  owner:
+    componentName: frontend
+    projectName: doclet
+  releaseName: frontend-27672a78
+  workloadOverrides:
+    containers:
+      main:
+        files:
+        - key: config.json
+          mountPath: /usr/share/nginx/html
+          value: |
+            {
+              "docServiceUrl": "http://default.staging.openchoreoapis.localhost:19080/document-svc",
+              "collabWsUrl": "ws://default.staging.openchoreoapis.localhost:19080/collab-svc/ws"
+            }

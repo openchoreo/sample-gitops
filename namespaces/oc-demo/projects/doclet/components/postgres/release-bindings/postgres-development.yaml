@@ -1,0 +1,10 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: postgres-development
+spec:
+  environment: development
+  owner:
+    componentName: postgres
+    projectName: doclet
+  releaseName: postgres-20260209-1

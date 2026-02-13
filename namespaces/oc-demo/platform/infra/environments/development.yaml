@@ -1,0 +1,14 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Environment
+metadata:
+  name: development
+  annotations:
+    openchoreo.dev/display-name: Development
+    openchoreo.dev/description: Development environment for testing and development
+  labels:
+    openchoreo.dev/name: development
+spec:
+  dataPlaneRef: default
+  gateway:
+    dnsPrefix: dev
+  isProduction: false

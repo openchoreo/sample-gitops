@@ -1,0 +1,14 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Environment
+metadata:
+  name: staging
+  annotations:
+    openchoreo.dev/display-name: Staging
+    openchoreo.dev/description: Staging environment for pre-production testing
+  labels:
+    openchoreo.dev/name: staging
+spec:
+  dataPlaneRef: default
+  gateway:
+    dnsPrefix: staging
+  isProduction: false

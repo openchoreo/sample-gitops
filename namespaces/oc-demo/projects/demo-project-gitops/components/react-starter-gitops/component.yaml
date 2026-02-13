@@ -1,0 +1,40 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: react-starter-gitops
+spec:
+  owner:
+    projectName: demo-project-gitops
+
+  # References the ComponentType
+  componentType: deployment/web-application
+
+  # Component Workflow configuration (developer-provided)
+  workflow:
+    # Reference to ComponentWorkflow
+    name: react
+
+    # Required parameters required by the ComponentWorkflow
+    systemParameters:
+      repository:
+        url: "https://github.com/openchoreo/sample-workloads"
+        revision:
+          branch: "main"
+          # Optional commit hash, should be a valid git commit
+          # commit: ""
+        appPath: "/webapp-react-nginx"
+
+    # Developer-configurable parameters (defined by PE, passed to build plane resource)
+    parameters:
+      nodeVersion: "20"
+
+  parameters:
+    replicas: 2
+    port: 80
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"

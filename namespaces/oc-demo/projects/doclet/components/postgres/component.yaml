@@ -1,0 +1,21 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Component
+metadata:
+  name: postgres
+spec:
+  owner:
+    projectName: doclet
+
+  componentType: deployment/database
+
+  parameters:
+    replicas: 1
+    port: 5432
+
+  traits:
+    - name: persistent-volume
+      instanceName: data-storage
+      parameters:
+        volumeName: pg-data
+        mountPath: /var/lib/postgresql/data
+        containerName: main

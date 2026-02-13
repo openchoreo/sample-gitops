@@ -1,0 +1,18 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: Workload
+metadata:
+  name: postgres
+spec:
+  owner:
+    componentName: postgres
+    projectName: doclet
+  containers:
+    main:
+      image: postgres:16-alpine
+      env:
+        - key: POSTGRES_USER
+          value: "doclet"
+        - key: POSTGRES_PASSWORD
+          value: "doclet"
+        - key: POSTGRES_DB
+          value: "doclet"

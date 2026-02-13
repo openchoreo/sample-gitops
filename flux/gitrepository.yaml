@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: sample-gitops
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/openchoreo/sample-gitops
+  ref:
+    branch: main
