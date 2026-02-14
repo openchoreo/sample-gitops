@@ -14,16 +14,16 @@ spec:
     name: docker-gitops-release
     systemParameters:
       repository:
-        url: "https://github.com/VajiraPrabuddhaka/doclet-app.git"
+        url: "https://github.com/openchoreo/sample-workloads.git"
         revision:
           branch: "main"
-        appPath: "/document-svc"
+        appPath: "/project-doclet-app/service-go-document"
     parameters:
       docker:
-        context: "/document-svc"
-        filePath: "/document-svc/Dockerfile"
+        context: "/project-doclet-app/service-go-document"
+        filePath: "/project-doclet-app/service-go-document/Dockerfile"
       gitops:
-        repositoryUrl: "https://github.com/VajiraPrabuddhaka/openchoreo-sample-gitops"
+        repositoryUrl: "https://github.com/openchoreo/sample-gitops"
         branch: "main"
         targetEnvironment: "development"
         deploymentPipeline: "standard"
