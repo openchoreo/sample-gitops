@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: ComponentType
 metadata:
   name: scheduled-task
+  namespace: default
 spec:
   workloadType: cronjob
 

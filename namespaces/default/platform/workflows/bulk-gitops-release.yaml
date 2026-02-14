@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Workflow
 metadata:
   name: bulk-gitops-release
+  namespace: default
   annotations:
     openchoreo.dev/description: "Bulk release workflow that generates ReleaseBindings for all components or a specific project"
 spec:

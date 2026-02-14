@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Workload
 metadata:
   name: collab-svc-workload
+  namespace: default
 spec:
   containers:
     main:

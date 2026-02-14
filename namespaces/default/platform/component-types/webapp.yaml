@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: ComponentType
 metadata:
   name: web-application
+  namespace: default
 spec:
   workloadType: deployment
 

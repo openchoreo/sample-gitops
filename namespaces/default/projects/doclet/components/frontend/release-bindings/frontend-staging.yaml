@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: ReleaseBinding
 metadata:
   name: frontend-staging
+  namespace: default
 spec:
   environment: staging
   owner:

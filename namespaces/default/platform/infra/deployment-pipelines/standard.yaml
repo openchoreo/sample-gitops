@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: DeploymentPipeline
 metadata:
   name: standard
+  namespace: default
   annotations:
     openchoreo.dev/display-name: Standard Pipeline
     openchoreo.dev/description: Standard deployment pipeline with dev, staging, and production environments

@@ -2,5 +2,6 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Project
 metadata:
   name: demo-project-gitops
+  namespace: default
 spec:
   deploymentPipelineRef: standard

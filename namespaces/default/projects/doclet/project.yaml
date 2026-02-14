@@ -7,5 +7,6 @@ metadata:
   labels:
     openchoreo.dev/name: doclet
   name: doclet
+  namespace: default
 spec:
   deploymentPipelineRef: standard

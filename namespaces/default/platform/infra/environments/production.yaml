@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Environment
 metadata:
   name: production
+  namespace: default
   annotations:
     openchoreo.dev/display-name: Production
     openchoreo.dev/description: Production environment for live workloads
