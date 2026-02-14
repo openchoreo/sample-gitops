@@ -9,6 +9,7 @@ spec:
     - google-cloud-buildpacks
     - ballerina-buildpack
     - docker
+    - docker-gitops-release
 
   schema:
     types:

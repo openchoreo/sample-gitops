@@ -7,6 +7,7 @@ spec:
 
   allowedWorkflows:
     - react
+    - docker-gitops-release
 
   schema:
     types:
