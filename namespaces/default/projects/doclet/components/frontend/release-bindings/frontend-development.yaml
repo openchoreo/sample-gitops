@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: ReleaseBinding
 metadata:
   name: frontend-development
+  namespace: default
 spec:
   environment: development
   owner:

@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Component
 metadata:
   name: document-svc
+  namespace: default
 spec:
   owner:
     projectName: doclet

@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: ComponentWorkflow
 metadata:
   name: docker-gitops-release
+  namespace: default
   annotations:
     openchoreo.dev/description: "Docker workflow that builds a container image and performs GitOps release in a single workflow"
 spec:

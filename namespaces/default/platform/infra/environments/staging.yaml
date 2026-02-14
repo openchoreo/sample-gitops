@@ -2,6 +2,7 @@ apiVersion: openchoreo.dev/v1alpha1
 kind: Environment
 metadata:
   name: staging
+  namespace: default
   annotations:
     openchoreo.dev/display-name: Staging
     openchoreo.dev/description: Staging environment for pre-production testing
