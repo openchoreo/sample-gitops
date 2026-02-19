@@ -7,7 +7,9 @@ spec:
   owner:
     projectName: doclet
 
-  componentType: deployment/message-broker
+  componentType:
+    name: deployment/message-broker
+    kind: ComponentType
 
   parameters:
     replicas: 1

@@ -7,7 +7,9 @@ spec:
   owner:
     projectName: doclet
 
-  componentType: deployment/service
+  componentType:
+    name: deployment/service
+    kind: ComponentType
 
   autoBuild: true
 

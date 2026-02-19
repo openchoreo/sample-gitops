@@ -7,8 +7,10 @@ spec:
   owner:
     projectName: demo-project-gitops
 
-  # References the ComponentType
-  componentType: deployment/web-application
+  # References the ComponentType 
+  componentType:
+    name: deployment/web-application
+    kind: ComponentType
 
   # Component Workflow configuration (developer-provided)
   workflow:

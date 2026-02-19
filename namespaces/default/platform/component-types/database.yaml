@@ -7,7 +7,8 @@ spec:
   workloadType: deployment
 
   allowedTraits:
-    - persistent-volume
+    - name: persistent-volume
+      kind: Trait
 
   schema:
     types:

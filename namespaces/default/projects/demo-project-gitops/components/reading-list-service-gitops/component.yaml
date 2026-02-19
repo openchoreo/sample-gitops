@@ -8,7 +8,9 @@ spec:
     projectName: demo-project-gitops
 
   # References the ComponentType
-  componentType: deployment/service
+  componentType:
+    name: deployment/service
+    kind: ComponentType
 
   autoDeploy: true
 

@@ -7,7 +7,9 @@ spec:
   owner:
     projectName: doclet
 
-  componentType: deployment/web-application
+  componentType:
+    name: deployment/web-application
+    kind: ComponentType
   autoBuild: true
 
   workflow:

@@ -6,7 +6,9 @@ metadata:
 spec:
   owner:
     projectName: demo-project-gitops
-  componentType: deployment/service
+  componentType:
+    name: deployment/service
+    kind: ComponentType
   workflow:
     name: docker-gitops
     systemParameters:

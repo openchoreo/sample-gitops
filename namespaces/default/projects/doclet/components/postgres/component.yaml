@@ -7,7 +7,9 @@ spec:
   owner:
     projectName: doclet
 
-  componentType: deployment/database
+  componentType:
+    name: deployment/database
+    kind: ComponentType
 
   parameters:
     replicas: 1
@@ -15,6 +17,7 @@ spec:
 
   traits:
     - name: persistent-volume
+      kind: Trait
       instanceName: data-storage
       parameters:
         volumeName: pg-data

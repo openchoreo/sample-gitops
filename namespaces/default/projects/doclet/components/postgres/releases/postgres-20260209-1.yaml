@@ -10,6 +10,7 @@ spec:
       replicas: 1
     traits:
     - instanceName: data-storage
+      kind: Trait
       name: persistent-volume
       parameters:
         containerName: main
