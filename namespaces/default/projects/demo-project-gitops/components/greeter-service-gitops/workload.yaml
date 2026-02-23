@@ -4,9 +4,8 @@ metadata:
   name: greeter-service-gitops-workload
   namespace: default
 spec:
-  containers:
-    main:
-      image: host.k3d.internal:10082/demo-project-gitops-greeter-service-gitops-image:v1-70168a71
+  container:
+    image: host.k3d.internal:10082/demo-project-gitops-greeter-service-gitops-image:v1-70168a71
   endpoints:
     greeter-api:
       port: 9090

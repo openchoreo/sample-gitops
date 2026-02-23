@@ -1,12 +1,12 @@
 apiVersion: openchoreo.dev/v1alpha1
 kind: ComponentRelease
 metadata:
-  name: frontend-27672a78
+  name: nats-20260223-1
   namespace: default
 spec:
   componentProfile:
     parameters:
-      port: 80
+      port: 4222
       replicas: 1
   componentType:
     resources:
@@ -19,7 +19,7 @@ spec:
           name: ${metadata.name}
           namespace: ${metadata.namespace}
         spec:
-          replicas: ${parameters.replicas}
+          replicas: ${envOverrides.replicas}
           selector:
             matchLabels: ${metadata.podSelectors}
           template:
@@ -28,16 +28,16 @@ spec:
             spec:
               containers:
               - args: |
-                  ${has(workload.containers[parameters.containerName].args) ? workload.containers[parameters.containerName].args : oc_omit()}
+                  ${has(workload.container.args) ? workload.container.args : oc_omit()}
                 command: |
-                  ${has(workload.containers[parameters.containerName].command) ? workload.containers[parameters.containerName].command : oc_omit()}
-                envFrom: ${configurations.toContainerEnvFrom(parameters.containerName)}
-                image: ${workload.containers[parameters.containerName].image}
-                imagePullPolicy: ${parameters.imagePullPolicy}
-                name: ${parameters.containerName}
+                  ${has(workload.container.command) ? workload.container.command : oc_omit()}
+                envFrom: ${configurations.toContainerEnvFrom()}
+                image: ${workload.container.image}
+                imagePullPolicy: ${envOverrides.imagePullPolicy}
+                name: main
                 ports:
                 - containerPort: ${parameters.port}
-                  name: http
+                  name: tcp
                   protocol: TCP
                 resources:
                   limits:
@@ -46,7 +46,7 @@ spec:
                   requests:
                     cpu: ${envOverrides.resources.requests.cpu}
                     memory: ${envOverrides.resources.requests.memory}
-                volumeMounts: ${configurations.toContainerVolumeMounts(parameters.containerName)}
+                volumeMounts: ${configurations.toContainerVolumeMounts()}
               volumes: ${configurations.toVolumes()}
     - id: service
       template:
@@ -58,30 +58,12 @@ spec:
           namespace: ${metadata.namespace}
         spec:
           ports:
-          - name: http
-            port: 80
+          - name: tcp
+            port: ${parameters.port}
             protocol: TCP
             targetPort: ${parameters.port}
           selector: ${metadata.podSelectors}
           type: ClusterIP
-    - id: httproute
-      template:
-        apiVersion: gateway.networking.k8s.io/v1
-        kind: HTTPRoute
-        metadata:
-          labels: ${metadata.labels}
-          name: ${metadata.name}
-          namespace: ${metadata.namespace}
-        spec:
-          hostnames:
-          - ${metadata.componentNamespace}.${metadata.componentName}-${metadata.environmentName}.${dataplane.publicVirtualHost}
-          parentRefs:
-          - name: gateway-default
-            namespace: openchoreo-data-plane
-          rules:
-          - backendRefs:
-            - name: ${metadata.componentName}
-              port: 80
     - forEach: ${configurations.toConfigEnvsByContainer()}
       id: env-config
       template:
@@ -155,12 +137,11 @@ spec:
       var: file
     schema:
       envOverrides:
+        imagePullPolicy: string | default=IfNotPresent
+        replicas: integer | default=1
         resources: ResourceRequirements | default={}
       parameters:
-        containerName: string | default=main
-        imagePullPolicy: string | default=IfNotPresent
-        port: integer | default=80
-        replicas: integer | default=1
+        port: integer | default=4222
       types:
         ResourceQuantity:
           cpu: string | default=100m
@@ -170,17 +151,11 @@ spec:
           requests: ResourceQuantity | default={}
     workloadType: deployment
   owner:
-    componentName: frontend
+    componentName: nats
     projectName: doclet
   workload:
-    containers:
-      main:
-        files:
-        - key: config.json
-          mountPath: /usr/share/nginx/html
-          value: |
-            {
-              "docServiceUrl": "http://default.development.openchoreoapis.localhost:19080/document-svc",
-              "collabWsUrl": "ws://default.development.openchoreoapis.localhost:19080/collab-svc/ws"
-            }
-        image: host.k3d.internal:10082/doclet-frontend-image:v1-27672a78
+    container:
+      args:
+      - --http_port
+      - "8222"
+      image: nats:2.10-alpine

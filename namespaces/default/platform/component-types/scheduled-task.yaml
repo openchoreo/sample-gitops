@@ -10,6 +10,8 @@ spec:
     - google-cloud-buildpacks
     - docker
 
+  allowedTraits: []
+
   schema:
     types:
       ResourceRequirements:
@@ -26,12 +28,11 @@ spec:
       backoffLimit: "integer | default=3"
       activeDeadlineSeconds: "integer | default=300"
       restartPolicy: "string | default=OnFailure"
-      imagePullPolicy: "string | default=IfNotPresent"
-      containerName: "string | default=main"
 
     envOverrides:
-      schedule: 'string | default="0 0 31 2 *"' # will never execute
+      schedule: 'string | default="0 0 31 2 *"'
       resources: "ResourceRequirements | default={}"
+      imagePullPolicy: "string | default=IfNotPresent"
 
   resources:
     - id: cronjob
@@ -59,13 +60,13 @@ spec:
                 spec:
                   restartPolicy: ${parameters.restartPolicy}
                   containers:
-                    - name: ${parameters.containerName}
-                      image: ${workload.containers[parameters.containerName].image}
-                      imagePullPolicy: ${parameters.imagePullPolicy}
+                    - name: main
+                      image: ${workload.container.image}
+                      imagePullPolicy: ${envOverrides.imagePullPolicy}
                       command: |
-                        ${has(workload.containers[parameters.containerName].command) ? workload.containers[parameters.containerName].command : oc_omit()}
+                        ${has(workload.container.command) ? workload.container.command : oc_omit()}
                       args: |
-                        ${has(workload.containers[parameters.containerName].args) ? workload.containers[parameters.containerName].args : oc_omit()}
+                        ${has(workload.container.args) ? workload.container.args : oc_omit()}
                       resources:
                         requests:
                           cpu: ${envOverrides.resources.requests.cpu}
@@ -73,8 +74,8 @@ spec:
                         limits:
                           cpu: ${envOverrides.resources.limits.cpu}
                           memory: ${envOverrides.resources.limits.memory}
-                      envFrom: ${configurations.toContainerEnvFrom(parameters.containerName)}
-                      volumeMounts: ${configurations.toContainerVolumeMounts(parameters.containerName)}
+                      envFrom: ${configurations.toContainerEnvFrom()}
+                      volumeMounts: ${configurations.toContainerVolumeMounts()}
                   volumes: ${configurations.toVolumes()}
 
     - id: env-config
