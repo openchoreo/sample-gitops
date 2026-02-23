@@ -4,16 +4,15 @@ metadata:
   name: document-svc-workload
   namespace: default
 spec:
-  containers:
-    main:
-      env:
-      - key: DOCLET_DOCUMENT_ADDR
-        value: :8080
-      - key: DOCLET_DATABASE_URL
-        value: postgres://doclet:doclet@postgres:5432/doclet?sslmode=disable
-      - key: DOCLET_NATS_URL
-        value: nats://nats:4222
-      image: temp-image-placeholder
+  container:
+    env:
+    - key: DOCLET_DOCUMENT_ADDR
+      value: :8080
+    - key: DOCLET_DATABASE_URL
+      value: postgres://doclet:doclet@postgres:5432/doclet?sslmode=disable
+    - key: DOCLET_NATS_URL
+      value: nats://nats:4222
+    image: temp-image-placeholder
   owner:
     componentName: document-svc
     projectName: doclet

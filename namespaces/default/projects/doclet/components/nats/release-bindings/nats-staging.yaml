@@ -8,4 +8,4 @@ spec:
   owner:
     componentName: nats
     projectName: doclet
-  releaseName: nats-20260209-1
+  releaseName: nats-20260223-1

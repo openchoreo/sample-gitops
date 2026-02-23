@@ -7,9 +7,8 @@ spec:
   owner:
     componentName: nats
     projectName: doclet
-  containers:
-    main:
-      image: nats:2.10-alpine
-      args:
-        - "--http_port"
-        - "8222"
+  container:
+    image: nats:2.10-alpine
+    args:
+      - "--http_port"
+      - "8222"

@@ -8,4 +8,4 @@ spec:
   owner:
     componentName: postgres
     projectName: doclet
-  releaseName: postgres-20260209-1
+  releaseName: postgres-20260223-1
