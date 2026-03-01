@@ -18,6 +18,9 @@
 *~
 *.tgz
 
+# occ index files
+.occ
+
 # Package Files #
 *.jar
 *.war

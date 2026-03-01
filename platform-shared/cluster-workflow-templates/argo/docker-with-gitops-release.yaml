@@ -385,16 +385,12 @@ spec:
             echo "Release name: $RELEASE_NAME"
             echo "Component: $COMPONENT_NAME"
             echo "Project: $PROJECT_NAME"
-            # TODO: Fix the occ properly to determine the output path from the repo itself
-            OUTPUT_PATH="projects/$PROJECT_NAME/components/$COMPONENT_NAME/releases"
-            echo " - output-path: $OUTPUT_PATH"
             
             occ componentrelease generate \
               --mode file-system --root-dir /mnt/vol/gitops \
               --name "$RELEASE_NAME" \
               --component "$COMPONENT_NAME" \
-              --project "$PROJECT_NAME" \
-              --output-path "$OUTPUT_PATH"
+              --project "$PROJECT_NAME"
 
             echo "ComponentRelease generated successfully"
 

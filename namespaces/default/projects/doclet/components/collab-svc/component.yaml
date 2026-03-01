@@ -16,6 +16,8 @@ spec:
   workflow:
     name: docker-gitops-release
     parameters:
+      componentName: "collab-svc"
+      projectName: "doclet"
       repository:
         url: "https://github.com/openchoreo/sample-workloads.git"
         revision:
