@@ -7,8 +7,7 @@ spec:
   workloadType: deployment
 
   allowedWorkflows:
-    - react
-    - docker
+    - docker-gitops-release
 
   allowedTraits:
     - name: api-configuration

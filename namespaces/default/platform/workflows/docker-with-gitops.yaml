@@ -8,8 +8,6 @@ metadata:
 spec:
   # Template Variable Reference (processed by controller):
   # ${metadata.workflowRunName}  - WorkflowRun CR name
-  # ${metadata.componentName}    - Component name (Only accessible for component level component-workflows)
-  # ${metadata.projectName}      - Project name (Only accessible for component level component-workflows)
   # ${metadata.namespaceName}    - Namespace name
   # ${parameters.*}              - Developer-provided values from parameters schema
 
@@ -17,6 +15,8 @@ spec:
   schema:
     # Developer-configurable parameters
     parameters:
+      componentName: string | description="Component name"
+      projectName: string | description="Project name"
       repository:
         url: string | description="Git repository URL"
         revision:
@@ -28,7 +28,7 @@ spec:
         filePath: string | default=./Dockerfile description="Path to the Dockerfile relative to the repository root"
       workloadDescriptorPath: string | default=workload.yaml description="Path to workload descriptor file relative to appPath"
 
-  # Rendered workflow resource for ComponentWorkflowRun executions
+  # Rendered workflow resource for WorkflowRun executions
   runTemplate:
     apiVersion: argoproj.io/v1alpha1
     kind: Workflow
@@ -39,9 +39,9 @@ spec:
       arguments:
         parameters:
           - name: component-name
-            value: ${metadata.componentName}
+            value: ${parameters.componentName}
           - name: project-name
-            value: ${metadata.projectName}
+            value: ${parameters.projectName}
           - name: namespace-name
             value: ${metadata.namespaceName}
           # Source repository parameters
@@ -72,7 +72,7 @@ spec:
           - name: registry-url
             value: host.k3d.internal:10082
           - name: image-name
-            value: ${metadata.projectName}-${metadata.componentName}-image
+            value: ${parameters.projectName}-${parameters.componentName}-image
           - name: image-tag
             value: v1
           # Source git secret (for private repos)
@@ -103,6 +103,7 @@ spec:
             - secretKey: git-token
               remoteRef:
                 key: git-token
+                property: git-token
     - id: gitops-git-secret
       template:
         apiVersion: external-secrets.io/v1
@@ -122,3 +123,4 @@ spec:
             - secretKey: git-token
               remoteRef:
                 key: gitops-token
+                property: git-token

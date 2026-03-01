@@ -10,6 +10,7 @@ spec:
     - google-cloud-buildpacks
     - ballerina-buildpack
     - docker
+    - docker-gitops-release
 
   allowedTraits:
     - name: api-configuration
