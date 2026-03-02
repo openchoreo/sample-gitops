@@ -1,0 +1,179 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ComponentRelease
+metadata:
+  name: frontend-4a2acc61
+  namespace: default
+spec:
+  componentProfile:
+    parameters:
+      port: 80
+      replicas: 1
+  componentType:
+    resources:
+    - id: deployment
+      template:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.name}
+          namespace: ${metadata.namespace}
+        spec:
+          replicas: ${envOverrides.replicas}
+          selector:
+            matchLabels: ${metadata.podSelectors}
+          template:
+            metadata:
+              labels: ${metadata.podSelectors}
+            spec:
+              containers:
+              - args: |
+                  ${has(workload.container.args) ? workload.container.args : oc_omit()}
+                command: |
+                  ${has(workload.container.command) ? workload.container.command : oc_omit()}
+                envFrom: ${configurations.toContainerEnvFrom()}
+                image: ${workload.container.image}
+                imagePullPolicy: ${envOverrides.imagePullPolicy}
+                name: main
+                resources:
+                  limits:
+                    cpu: ${envOverrides.resources.limits.cpu}
+                    memory: ${envOverrides.resources.limits.memory}
+                  requests:
+                    cpu: ${envOverrides.resources.requests.cpu}
+                    memory: ${envOverrides.resources.requests.memory}
+                volumeMounts: ${configurations.toContainerVolumeMounts()}
+              volumes: ${configurations.toVolumes()}
+    - id: service
+      includeWhen: ${size(workload.endpoints) > 0}
+      template:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.componentName}
+          namespace: ${metadata.namespace}
+        spec:
+          ports: ${workload.toServicePorts()}
+          selector: ${metadata.podSelectors}
+          type: ClusterIP
+    - id: httproute
+      includeWhen: ${size(workload.endpoints) > 0}
+      template:
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.name}
+          namespace: ${metadata.namespace}
+        spec:
+          hostnames: |
+            ${[gateway.ingress.external.?http, gateway.ingress.external.?https]
+              .filter(g, g.hasValue()).map(g, g.value().host).distinct()
+              .map(h, metadata.componentName + "-" + metadata.environmentName + "-" + metadata.componentNamespace + "." + h)}
+          parentRefs:
+          - name: ${gateway.ingress.external.name}
+            namespace: ${gateway.ingress.external.namespace}
+          rules:
+          - backendRefs:
+            - name: ${metadata.componentName}
+              port: ${workload.toServicePorts()[0].port}
+    - forEach: ${configurations.toConfigEnvsByContainer()}
+      id: env-config
+      template:
+        apiVersion: v1
+        data: |
+          ${envConfig.envs.transformMapEntry(index, env, {env.name: env.value})}
+        kind: ConfigMap
+        metadata:
+          name: ${envConfig.resourceName}
+          namespace: ${metadata.namespace}
+      var: envConfig
+    - forEach: ${configurations.toConfigFileList()}
+      id: file-config
+      template:
+        apiVersion: v1
+        data:
+          ${config.name}: |
+            ${config.value}
+        kind: ConfigMap
+        metadata:
+          name: ${config.resourceName}
+          namespace: ${metadata.namespace}
+      var: config
+    - forEach: ${configurations.toSecretEnvsByContainer()}
+      id: secret-env-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${secretEnv.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data: |
+            ${secretEnv.envs.map(secret, {
+              "secretKey": secret.name,
+              "remoteRef": {
+                "key": secret.remoteRef.key,
+                "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
+              }
+            })}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${secretEnv.resourceName}
+      var: secretEnv
+    - forEach: ${configurations.toSecretFileList()}
+      id: secret-file-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${file.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data:
+          - remoteRef:
+              key: ${file.remoteRef.key}
+              property: |
+                ${has(file.remoteRef.property) ? file.remoteRef.property : oc_omit()}
+            secretKey: ${file.name}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${file.resourceName}
+      var: file
+    schema:
+      envOverrides:
+        imagePullPolicy: string | default=IfNotPresent
+        replicas: integer | default=1
+        resources: ResourceRequirements | default={}
+      parameters: {}
+      types:
+        ResourceQuantity:
+          cpu: string | default=100m
+          memory: string | default=256Mi
+        ResourceRequirements:
+          limits: ResourceQuantity | default={}
+          requests: ResourceQuantity | default={}
+    workloadType: deployment
+  owner:
+    componentName: frontend
+    projectName: doclet
+  workload:
+    container:
+      files:
+      - key: config.json
+        mountPath: /usr/share/nginx/html
+        value: |
+          {
+            "docServiceUrl": "http://default.development.openchoreoapis.localhost:19080/document-svc",
+            "collabWsUrl": "ws://default.development.openchoreoapis.localhost:19080/collab-svc/ws"
+          }
+      image: host.k3d.internal:10082/doclet-frontend-image:v1-4a2acc61
