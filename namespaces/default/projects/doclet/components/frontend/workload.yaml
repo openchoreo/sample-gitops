@@ -5,15 +5,23 @@ metadata:
   namespace: default
 spec:
   container:
-    files:
-    - key: config.json
-      mountPath: /usr/share/nginx/html
-      value: |
-        {
-          "docServiceUrl": "http://default.development.openchoreoapis.localhost:19080/document-svc",
-          "collabWsUrl": "ws://default.development.openchoreoapis.localhost:19080/collab-svc/ws"
-        }
-    image: host.k3d.internal:10082/doclet-frontend-image:v1-27672a78
+    image: host.k3d.internal:10082/doclet-frontend-image:v1-4a2acc61
+  endpoints:
+    http:
+      type: HTTP
+      port: 80
+      visibility: [external]
+  connections:
+    - component: document-svc
+      endpoint: http
+      visibility: project
+      envBindings:
+        address: DOC_SERVICE_URL
+    - component: collab-svc
+      endpoint: http
+      visibility: project
+      envBindings:
+        address: COLLAB_SERVICE_URL
   owner:
     componentName: frontend
     projectName: doclet

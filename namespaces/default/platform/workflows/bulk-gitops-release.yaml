@@ -80,3 +80,4 @@ spec:
             - secretKey: git-token
               remoteRef:
                 key: gitops-token
+                property: git-token

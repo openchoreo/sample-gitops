@@ -7,7 +7,8 @@ spec:
   workloadType: deployment
 
   allowedWorkflows:
-    - docker-gitops-release
+    - kind: Workflow
+      name: docker-gitops-release
 
   allowedTraits:
     - name: api-configuration
@@ -26,7 +27,7 @@ spec:
         cpu: "string | default=100m"
         memory: "string | default=256Mi"
 
-    parameters: {}
+    parameters: { }
 
     envOverrides:
       replicas: "integer | default=1"
@@ -65,6 +66,7 @@ spec:
                     limits:
                       cpu: ${envOverrides.resources.limits.cpu}
                       memory: ${envOverrides.resources.limits.memory}
+                  env: ${connections.toContainerEnv()}
                   envFrom: ${configurations.toContainerEnvFrom()}
                   volumeMounts: ${configurations.toContainerVolumeMounts()}
               volumes: ${configurations.toVolumes()}
@@ -83,15 +85,16 @@ spec:
           selector: ${metadata.podSelectors}
           ports: ${workload.toServicePorts()}
 
-    - id: httproute
-      includeWhen: ${size(workload.endpoints) > 0}
+    - id: httproute-external
+      forEach: '${workload.endpoints.transformList(name, ep, ("external" in ep.visibility && ep.type in ["HTTP", "REST", "GraphQL", "Websocket"]) ? [name] : []).flatten()}'
+      var: endpoint
       template:
         apiVersion: gateway.networking.k8s.io/v1
         kind: HTTPRoute
         metadata:
-          name: ${metadata.name}
+          name: ${oc_generate_name(metadata.componentName, endpoint)}
           namespace: ${metadata.namespace}
-          labels: ${metadata.labels}
+          labels: '${oc_merge(metadata.labels, {"openchoreo.dev/endpoint-name": endpoint, "openchoreo.dev/endpoint-visibility": "external"})}'
         spec:
           parentRefs:
             - name: ${gateway.ingress.external.name}
@@ -99,11 +102,33 @@ spec:
           hostnames: |
             ${[gateway.ingress.external.?http, gateway.ingress.external.?https]
               .filter(g, g.hasValue()).map(g, g.value().host).distinct()
-              .map(h, metadata.componentName + "-" + metadata.environmentName + "-" + metadata.componentNamespace + "." + h)}
+              .map(h, oc_dns_label(endpoint, metadata.componentName, metadata.environmentName, metadata.componentNamespace) + "." + h)}
           rules:
             - backendRefs:
                 - name: ${metadata.componentName}
-                  port: ${workload.toServicePorts()[0].port}
+                  port: ${workload.endpoints[endpoint].port}
+    - id: httproute-internal
+      forEach: '${workload.endpoints.transformList(name, ep, ("internal" in ep.visibility && ep.type in ["HTTP", "REST", "GraphQL", "Websocket"]) ? [name] : []).flatten()}'
+      var: endpoint
+      template:
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: '${oc_generate_name(metadata.componentName, endpoint, "internal")}'
+          namespace: ${metadata.namespace}
+          labels: '${oc_merge(metadata.labels, {"openchoreo.dev/endpoint-name": endpoint, "openchoreo.dev/endpoint-visibility": "internal"})}'
+        spec:
+          parentRefs:
+            - name: ${gateway.ingress.internal.name}
+              namespace: ${gateway.ingress.internal.namespace}
+          hostnames: |
+            ${[gateway.ingress.internal.?http, gateway.ingress.internal.?https]
+              .filter(g, g.hasValue()).map(g, g.value().host).distinct()
+              .map(h, oc_dns_label(endpoint, metadata.componentName, metadata.environmentName, metadata.componentNamespace) + "." + h)}
+          rules:
+            - backendRefs:
+                - name: ${metadata.componentName}
+                  port: ${workload.endpoints[endpoint].port}
     - id: env-config
       forEach: ${configurations.toConfigEnvsByContainer()}
       var: envConfig

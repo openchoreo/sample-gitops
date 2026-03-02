@@ -8,11 +8,27 @@ spec:
     env:
     - key: DOCLET_DOCUMENT_ADDR
       value: :8080
-    - key: DOCLET_DATABASE_URL
-      value: postgres://doclet:doclet@postgres:5432/doclet?sslmode=disable
-    - key: DOCLET_NATS_URL
-      value: nats://nats:4222
-    image: temp-image-placeholder
+    - key: DB_PASSWORD
+      value: "doclet"
+    - key: DB_USER
+      value: "doclet"
+    image: host.k3d.internal:10082/doclet-document-svc-image:v1-4a2acc61
+  endpoints:
+    http:
+      type: REST
+      port: 8080
+      visibility: [external]
+  connections:
+    - component: postgres
+      endpoint: tcp
+      visibility: project
+      envBindings:
+        address: DOCLET_DATABASE_URL
+    - component: nats
+      endpoint: tcp
+      visibility: project
+      envBindings:
+        address: DOCLET_NATS_URL
   owner:
     componentName: document-svc
     projectName: doclet

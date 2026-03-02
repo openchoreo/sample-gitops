@@ -38,6 +38,7 @@ spec:
                   ${has(workload.container.args) ? workload.container.args : oc_omit()}
                 command: |
                   ${has(workload.container.command) ? workload.container.command : oc_omit()}
+                env: ${connections.toContainerEnv()}
                 envFrom: ${configurations.toContainerEnvFrom()}
                 image: ${workload.container.image}
                 imagePullPolicy: ${envOverrides.imagePullPolicy}
@@ -216,3 +217,7 @@ spec:
       - key: POSTGRES_DB
         value: doclet
       image: postgres:16-alpine
+    endpoints:
+      tcp:
+        type: TCP
+        port: 5432

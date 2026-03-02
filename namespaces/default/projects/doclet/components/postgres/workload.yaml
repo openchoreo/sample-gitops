@@ -16,3 +16,7 @@ spec:
         value: "doclet"
       - key: POSTGRES_DB
         value: "doclet"
+  endpoints:
+    tcp:
+      type: TCP
+      port: 5432

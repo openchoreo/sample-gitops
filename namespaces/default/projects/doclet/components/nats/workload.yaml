@@ -12,3 +12,7 @@ spec:
     args:
       - "--http_port"
       - "8222"
+  endpoints:
+    tcp:
+      type: TCP
+      port: 4222
