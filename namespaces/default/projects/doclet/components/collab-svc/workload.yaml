@@ -4,21 +4,21 @@ metadata:
   name: collab-svc-workload
   namespace: default
 spec:
+  connections:
+  - component: nats
+    endpoint: tcp
+    envBindings:
+      address: DOCLET_NATS_URL
+    visibility: project
   container:
     env:
     - key: DOCLET_COLLAB_ADDR
       value: :8090
-    image: temp-image-placeholder
+    image: host.k3d.internal:10082/doclet-collab-svc-image:v1-ba0e100a
   endpoints:
     http:
-      type: REST
       port: 8090
-  connections:
-    - component: nats
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_NATS_URL
+      type: REST
   owner:
     componentName: collab-svc
     projectName: doclet
