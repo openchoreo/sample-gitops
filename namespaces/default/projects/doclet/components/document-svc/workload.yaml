@@ -4,31 +4,32 @@ metadata:
   name: document-svc-workload
   namespace: default
 spec:
+  connections:
+  - component: postgres
+    endpoint: tcp
+    envBindings:
+      address: DOCLET_DATABASE_URL
+    visibility: project
+  - component: nats
+    endpoint: tcp
+    envBindings:
+      address: DOCLET_NATS_URL
+    visibility: project
   container:
     env:
     - key: DOCLET_DOCUMENT_ADDR
       value: :8080
     - key: DB_PASSWORD
-      value: "doclet"
+      value: doclet
     - key: DB_USER
-      value: "doclet"
-    image: host.k3d.internal:10082/doclet-document-svc-image:v1-4a2acc61
+      value: doclet
+    image: host.k3d.internal:10082/doclet-document-svc-image:v1-ba0e100a
   endpoints:
     http:
-      type: REST
       port: 8080
-      visibility: [external]
-  connections:
-    - component: postgres
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_DATABASE_URL
-    - component: nats
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_NATS_URL
+      type: REST
+      visibility:
+      - external
   owner:
     componentName: document-svc
     projectName: doclet
