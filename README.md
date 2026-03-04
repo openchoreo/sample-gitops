@@ -86,6 +86,9 @@ kind: WorkflowRun
 metadata:
   name: document-svc-manual-01
   namespace: default
+  labels:
+    openchoreo.dev/project: "doclet"
+    openchoreo.dev/component: "document-svc"
 spec:
   workflow:
     name: docker-gitops-release
@@ -114,6 +117,9 @@ kind: WorkflowRun
 metadata:
   name: collab-svc-manual-01
   namespace: default
+  labels:
+    openchoreo.dev/project: "doclet"
+    openchoreo.dev/component: "collab-svc"
 spec:
   workflow:
     name: docker-gitops-release
@@ -142,6 +148,9 @@ kind: WorkflowRun
 metadata:
   name: frontend-workflow-manual-01
   namespace: default
+  labels:
+    openchoreo.dev/project: "doclet"
+    openchoreo.dev/component: "frontend"
 spec:
   workflow:
     name: docker-gitops-release
