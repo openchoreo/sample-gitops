@@ -1,0 +1,216 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ComponentRelease
+metadata:
+  name: frontend-ba0e100a
+  namespace: default
+spec:
+  componentProfile:
+    parameters:
+      port: 80
+      replicas: 1
+  componentType:
+    resources:
+    - id: deployment
+      template:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.name}
+          namespace: ${metadata.namespace}
+        spec:
+          replicas: ${envOverrides.replicas}
+          selector:
+            matchLabels: ${metadata.podSelectors}
+          template:
+            metadata:
+              labels: ${metadata.podSelectors}
+            spec:
+              containers:
+              - args: |
+                  ${has(workload.container.args) ? workload.container.args : oc_omit()}
+                command: |
+                  ${has(workload.container.command) ? workload.container.command : oc_omit()}
+                env: ${connections.toContainerEnv()}
+                envFrom: ${configurations.toContainerEnvFrom()}
+                image: ${workload.container.image}
+                imagePullPolicy: ${envOverrides.imagePullPolicy}
+                name: main
+                resources:
+                  limits:
+                    cpu: ${envOverrides.resources.limits.cpu}
+                    memory: ${envOverrides.resources.limits.memory}
+                  requests:
+                    cpu: ${envOverrides.resources.requests.cpu}
+                    memory: ${envOverrides.resources.requests.memory}
+                volumeMounts: ${configurations.toContainerVolumeMounts()}
+              volumes: ${configurations.toVolumes()}
+    - id: service
+      includeWhen: ${size(workload.endpoints) > 0}
+      template:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          labels: ${metadata.labels}
+          name: ${metadata.componentName}
+          namespace: ${metadata.namespace}
+        spec:
+          ports: ${workload.toServicePorts()}
+          selector: ${metadata.podSelectors}
+          type: ClusterIP
+    - forEach: '${workload.endpoints.transformList(name, ep, ("external" in ep.visibility
+        && ep.type in ["HTTP", "REST", "GraphQL", "Websocket"]) ? [name] : []).flatten()}'
+      id: httproute-external
+      template:
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          labels: '${oc_merge(metadata.labels, {"openchoreo.dev/endpoint-name": endpoint,
+            "openchoreo.dev/endpoint-visibility": "external"})}'
+          name: ${oc_generate_name(metadata.componentName, endpoint)}
+          namespace: ${metadata.namespace}
+        spec:
+          hostnames: |
+            ${[gateway.ingress.external.?http, gateway.ingress.external.?https]
+              .filter(g, g.hasValue()).map(g, g.value().host).distinct()
+              .map(h, oc_dns_label(endpoint, metadata.componentName, metadata.environmentName, metadata.componentNamespace) + "." + h)}
+          parentRefs:
+          - name: ${gateway.ingress.external.name}
+            namespace: ${gateway.ingress.external.namespace}
+          rules:
+          - backendRefs:
+            - name: ${metadata.componentName}
+              port: ${workload.endpoints[endpoint].port}
+      var: endpoint
+    - forEach: '${workload.endpoints.transformList(name, ep, ("internal" in ep.visibility
+        && ep.type in ["HTTP", "REST", "GraphQL", "Websocket"]) ? [name] : []).flatten()}'
+      id: httproute-internal
+      template:
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          labels: '${oc_merge(metadata.labels, {"openchoreo.dev/endpoint-name": endpoint,
+            "openchoreo.dev/endpoint-visibility": "internal"})}'
+          name: ${oc_generate_name(metadata.componentName, endpoint, "internal")}
+          namespace: ${metadata.namespace}
+        spec:
+          hostnames: |
+            ${[gateway.ingress.internal.?http, gateway.ingress.internal.?https]
+              .filter(g, g.hasValue()).map(g, g.value().host).distinct()
+              .map(h, oc_dns_label(endpoint, metadata.componentName, metadata.environmentName, metadata.componentNamespace) + "." + h)}
+          parentRefs:
+          - name: ${gateway.ingress.internal.name}
+            namespace: ${gateway.ingress.internal.namespace}
+          rules:
+          - backendRefs:
+            - name: ${metadata.componentName}
+              port: ${workload.endpoints[endpoint].port}
+      var: endpoint
+    - forEach: ${configurations.toConfigEnvsByContainer()}
+      id: env-config
+      template:
+        apiVersion: v1
+        data: |
+          ${envConfig.envs.transformMapEntry(index, env, {env.name: env.value})}
+        kind: ConfigMap
+        metadata:
+          name: ${envConfig.resourceName}
+          namespace: ${metadata.namespace}
+      var: envConfig
+    - forEach: ${configurations.toConfigFileList()}
+      id: file-config
+      template:
+        apiVersion: v1
+        data:
+          ${config.name}: |
+            ${config.value}
+        kind: ConfigMap
+        metadata:
+          name: ${config.resourceName}
+          namespace: ${metadata.namespace}
+      var: config
+    - forEach: ${configurations.toSecretEnvsByContainer()}
+      id: secret-env-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${secretEnv.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data: |
+            ${secretEnv.envs.map(secret, {
+              "secretKey": secret.name,
+              "remoteRef": {
+                "key": secret.remoteRef.key,
+                "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
+              }
+            })}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${secretEnv.resourceName}
+      var: secretEnv
+    - forEach: ${configurations.toSecretFileList()}
+      id: secret-file-external
+      template:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: ${file.resourceName}
+          namespace: ${metadata.namespace}
+        spec:
+          data:
+          - remoteRef:
+              key: ${file.remoteRef.key}
+              property: |
+                ${has(file.remoteRef.property) ? file.remoteRef.property : oc_omit()}
+            secretKey: ${file.name}
+          refreshInterval: 15s
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${dataplane.secretStore}
+          target:
+            creationPolicy: Owner
+            name: ${file.resourceName}
+      var: file
+    schema:
+      envOverrides:
+        imagePullPolicy: string | default=IfNotPresent
+        replicas: integer | default=1
+        resources: ResourceRequirements | default={}
+      parameters: {}
+      types:
+        ResourceQuantity:
+          cpu: string | default=100m
+          memory: string | default=256Mi
+        ResourceRequirements:
+          limits: ResourceQuantity | default={}
+          requests: ResourceQuantity | default={}
+    workloadType: deployment
+  owner:
+    componentName: frontend
+    projectName: doclet
+  workload:
+    connections:
+    - component: document-svc
+      endpoint: http
+      envBindings:
+        address: DOC_SERVICE_URL
+      visibility: project
+    - component: collab-svc
+      endpoint: http
+      envBindings:
+        address: COLLAB_SERVICE_URL
+      visibility: project
+    container:
+      image: host.k3d.internal:10082/doclet-frontend-image:v1-ba0e100a
+    endpoints:
+      http:
+        port: 80
+        type: HTTP
+        visibility:
+        - external
