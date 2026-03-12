@@ -18,17 +18,18 @@ spec:
       type: REST
       port: 8080
       visibility: [external]
-  connections:
-    - component: postgres
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_DATABASE_URL
-    - component: nats
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_NATS_URL
+  dependencies:
+    endpoints:
+      - component: postgres
+        name: tcp
+        visibility: project
+        envBindings:
+          address: DOCLET_DATABASE_URL
+      - component: nats
+        name: tcp
+        visibility: project
+        envBindings:
+          address: DOCLET_NATS_URL
   owner:
     componentName: document-svc
     projectName: doclet

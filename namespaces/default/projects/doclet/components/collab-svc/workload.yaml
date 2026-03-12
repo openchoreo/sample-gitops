@@ -13,12 +13,13 @@ spec:
     http:
       type: REST
       port: 8090
-  connections:
-    - component: nats
-      endpoint: tcp
-      visibility: project
-      envBindings:
-        address: DOCLET_NATS_URL
+  dependencies:
+    endpoints:
+      - component: nats
+        name: tcp
+        visibility: project
+        envBindings:
+          address: DOCLET_NATS_URL
   owner:
     componentName: collab-svc
     projectName: doclet

@@ -11,17 +11,18 @@ spec:
       type: HTTP
       port: 80
       visibility: [external]
-  connections:
-    - component: document-svc
-      endpoint: http
-      visibility: project
-      envBindings:
-        address: DOC_SERVICE_URL
-    - component: collab-svc
-      endpoint: http
-      visibility: project
-      envBindings:
-        address: COLLAB_SERVICE_URL
+  dependencies:
+    endpoints:
+      - component: document-svc
+        name: http
+        visibility: project
+        envBindings:
+          address: DOC_SERVICE_URL
+      - component: collab-svc
+        name: http
+        visibility: project
+        envBindings:
+          address: COLLAB_SERVICE_URL
   owner:
     componentName: frontend
     projectName: doclet

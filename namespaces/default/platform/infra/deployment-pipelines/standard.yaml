@@ -10,11 +10,11 @@ metadata:
     openchoreo.dev/name: standard
 spec:
   promotionPaths:
-    - sourceEnvironmentRef: development
+    - sourceEnvironmentRef:
+        name: development
       targetEnvironmentRefs:
         - name: staging
-          requiresApproval: false
-    - sourceEnvironmentRef: staging
+    - sourceEnvironmentRef:
+        name: staging
       targetEnvironmentRefs:
         - name: production
-          requiresApproval: true
