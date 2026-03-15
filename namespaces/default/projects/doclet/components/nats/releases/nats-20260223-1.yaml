@@ -9,6 +9,8 @@ spec:
       port: 4222
       replicas: 1
   componentType:
+    kind: ComponentType
+    name: web-application
     spec:
       resources:
       - id: deployment

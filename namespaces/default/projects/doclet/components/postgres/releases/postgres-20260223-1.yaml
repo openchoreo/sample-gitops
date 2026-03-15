@@ -10,12 +10,15 @@ spec:
       replicas: 1
     traits:
     - instanceName: data-storage
+      kind: Trait
       name: persistent-volume
       parameters:
         containerName: main
         mountPath: /var/lib/postgresql/data
         volumeName: pg-data
   componentType:
+    kind: ComponentType
+    name: database
     spec:
       resources:
       - id: deployment
