@@ -15,6 +15,7 @@ spec:
 
   workflow:
     name: docker-gitops-release
+    kind: Workflow
     parameters:
       componentName: "collab-svc"
       projectName: "doclet"

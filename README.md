@@ -92,6 +92,7 @@ metadata:
 spec:
   workflow:
     name: docker-gitops-release
+    kind: Workflow
     parameters:
       componentName: document-svc
       projectName: doclet
@@ -122,6 +123,7 @@ metadata:
     openchoreo.dev/component: "collab-svc"
 spec:
   workflow:
+    kind: Workflow
     name: docker-gitops-release
     parameters:
       componentName: collab-svc
@@ -153,6 +155,7 @@ metadata:
     openchoreo.dev/component: "frontend"
 spec:
   workflow:
+    kind: Workflow
     name: docker-gitops-release
     parameters:
       componentName: frontend
@@ -199,6 +202,7 @@ metadata:
   namespace: default
 spec:
   workflow:
+    kind: Workflow
     name: bulk-gitops-release
     parameters:
       scope:
@@ -213,4 +217,3 @@ EOF
 ```
 
 Replace `<your-github-username>` with your GitHub username. Once the workflow completes, a pull request will be created in your forked GitOps repository to promote all Doclet components from development to staging in a single operation. Merge the PR and wait for Flux to sync the changes to your cluster.
-

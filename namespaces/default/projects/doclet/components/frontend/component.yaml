@@ -14,6 +14,7 @@ spec:
 
   workflow:
     name: docker-gitops-release
+    kind: Workflow
     parameters:
       componentName: "frontend"
       projectName: "doclet"
