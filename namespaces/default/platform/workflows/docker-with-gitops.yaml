@@ -8,7 +8,7 @@ metadata:
 spec:
   # Template Variable Reference (processed by controller):
   # ${metadata.workflowRunName}  - WorkflowRun CR name
-  # ${metadata.namespaceName}    - Namespace name
+  # ${metadata.namespace}    - Namespace name
   # ${parameters.*}              - Developer-provided values from parameters schema
 
   # Schema definition for component workflows
@@ -72,7 +72,7 @@ spec:
     kind: Workflow
     metadata:
       name: ${metadata.workflowRunName}
-      namespace: openchoreo-ci-${metadata.namespaceName}
+      namespace: workflows-${metadata.namespace}
     spec:
       arguments:
         parameters:
@@ -81,7 +81,7 @@ spec:
           - name: project-name
             value: ${parameters.projectName}
           - name: namespace-name
-            value: ${metadata.namespaceName}
+            value: ${metadata.namespace}
           # Source repository parameters
           - name: git-repo
             value: ${parameters.repository.url}
@@ -128,7 +128,7 @@ spec:
         kind: ExternalSecret
         metadata:
           name: ${metadata.workflowRunName}-source-git-secret
-          namespace: openchoreo-ci-${metadata.namespaceName}
+          namespace: workflows-${metadata.namespace}
         spec:
           refreshInterval: 15s
           secretStoreRef:
@@ -148,7 +148,7 @@ spec:
         kind: ExternalSecret
         metadata:
           name: ${metadata.workflowRunName}-gitops-git-secret
-          namespace: openchoreo-ci-${metadata.namespaceName}
+          namespace: workflows-${metadata.namespace}
         spec:
           refreshInterval: 15s
           secretStoreRef:
