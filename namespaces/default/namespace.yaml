@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: default
   labels:
-    openchoreo.dev/controlplane-namespace: "true"
+    openchoreo.dev/control-plane: "true"
