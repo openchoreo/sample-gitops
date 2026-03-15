@@ -9,173 +9,174 @@ spec:
       port: 4222
       replicas: 1
   componentType:
-    resources:
-    - id: deployment
-      template:
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          labels: ${metadata.labels}
-          name: ${metadata.name}
-          namespace: ${metadata.namespace}
-        spec:
-          replicas: ${environmentConfigs.replicas}
-          selector:
-            matchLabels: ${metadata.podSelectors}
-          template:
-            metadata:
-              labels: ${metadata.podSelectors}
-            spec:
-              containers:
-              - args: |
-                  ${has(workload.container.args) ? workload.container.args : oc_omit()}
-                command: |
-                  ${has(workload.container.command) ? workload.container.command : oc_omit()}
-                env: ${connections.toContainerEnv()}
-                envFrom: ${configurations.toContainerEnvFrom()}
-                image: ${workload.container.image}
-                imagePullPolicy: ${environmentConfigs.imagePullPolicy}
-                name: main
-                ports:
-                - containerPort: ${parameters.port}
-                  name: tcp
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: ${environmentConfigs.resources.limits.cpu}
-                    memory: ${environmentConfigs.resources.limits.memory}
-                  requests:
-                    cpu: ${environmentConfigs.resources.requests.cpu}
-                    memory: ${environmentConfigs.resources.requests.memory}
-                volumeMounts: ${configurations.toContainerVolumeMounts()}
-              volumes: ${configurations.toVolumes()}
-    - id: service
-      template:
-        apiVersion: v1
-        kind: Service
-        metadata:
-          labels: ${metadata.labels}
-          name: ${metadata.componentName}
-          namespace: ${metadata.namespace}
-        spec:
-          ports:
-          - name: tcp
-            port: ${parameters.port}
-            protocol: TCP
-            targetPort: ${parameters.port}
-          selector: ${metadata.podSelectors}
-          type: ClusterIP
-    - forEach: ${configurations.toConfigEnvsByContainer()}
-      id: env-config
-      template:
-        apiVersion: v1
-        data: |
-          ${envConfig.envs.transformMapEntry(index, env, {env.name: env.value})}
-        kind: ConfigMap
-        metadata:
-          name: ${envConfig.resourceName}
-          namespace: ${metadata.namespace}
-      var: envConfig
-    - forEach: ${configurations.toConfigFileList()}
-      id: file-config
-      template:
-        apiVersion: v1
-        data:
-          ${config.name}: |
-            ${config.value}
-        kind: ConfigMap
-        metadata:
-          name: ${config.resourceName}
-          namespace: ${metadata.namespace}
-      var: config
-    - forEach: ${configurations.toSecretEnvsByContainer()}
-      id: secret-env-external
-      template:
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: ${secretEnv.resourceName}
-          namespace: ${metadata.namespace}
-        spec:
+    spec:
+      resources:
+      - id: deployment
+        template:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            labels: ${metadata.labels}
+            name: ${metadata.name}
+            namespace: ${metadata.namespace}
+          spec:
+            replicas: ${environmentConfigs.replicas}
+            selector:
+              matchLabels: ${metadata.podSelectors}
+            template:
+              metadata:
+                labels: ${metadata.podSelectors}
+              spec:
+                containers:
+                - args: |
+                    ${has(workload.container.args) ? workload.container.args : oc_omit()}
+                  command: |
+                    ${has(workload.container.command) ? workload.container.command : oc_omit()}
+                  env: ${connections.toContainerEnv()}
+                  envFrom: ${configurations.toContainerEnvFrom()}
+                  image: ${workload.container.image}
+                  imagePullPolicy: ${environmentConfigs.imagePullPolicy}
+                  name: main
+                  ports:
+                  - containerPort: ${parameters.port}
+                    name: tcp
+                    protocol: TCP
+                  resources:
+                    limits:
+                      cpu: ${environmentConfigs.resources.limits.cpu}
+                      memory: ${environmentConfigs.resources.limits.memory}
+                    requests:
+                      cpu: ${environmentConfigs.resources.requests.cpu}
+                      memory: ${environmentConfigs.resources.requests.memory}
+                  volumeMounts: ${configurations.toContainerVolumeMounts()}
+                volumes: ${configurations.toVolumes()}
+      - id: service
+        template:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            labels: ${metadata.labels}
+            name: ${metadata.componentName}
+            namespace: ${metadata.namespace}
+          spec:
+            ports:
+            - name: tcp
+              port: ${parameters.port}
+              protocol: TCP
+              targetPort: ${parameters.port}
+            selector: ${metadata.podSelectors}
+            type: ClusterIP
+      - forEach: ${configurations.toConfigEnvsByContainer()}
+        id: env-config
+        template:
+          apiVersion: v1
           data: |
-            ${secretEnv.envs.map(secret, {
-              "secretKey": secret.name,
-              "remoteRef": {
-                "key": secret.remoteRef.key,
-                "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
-              }
-            })}
-          refreshInterval: 15s
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: ${dataplane.secretStore}
-          target:
-            creationPolicy: Owner
-            name: ${secretEnv.resourceName}
-      var: secretEnv
-    - forEach: ${configurations.toSecretFileList()}
-      id: secret-file-external
-      template:
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: ${file.resourceName}
-          namespace: ${metadata.namespace}
-        spec:
+            ${envConfig.envs.transformMapEntry(index, env, {env.name: env.value})}
+          kind: ConfigMap
+          metadata:
+            name: ${envConfig.resourceName}
+            namespace: ${metadata.namespace}
+        var: envConfig
+      - forEach: ${configurations.toConfigFileList()}
+        id: file-config
+        template:
+          apiVersion: v1
           data:
-          - remoteRef:
-              key: ${file.remoteRef.key}
-              property: |
-                ${has(file.remoteRef.property) ? file.remoteRef.property : oc_omit()}
-            secretKey: ${file.name}
-          refreshInterval: 15s
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: ${dataplane.secretStore}
-          target:
-            creationPolicy: Owner
+            ${config.name}: |
+              ${config.value}
+          kind: ConfigMap
+          metadata:
+            name: ${config.resourceName}
+            namespace: ${metadata.namespace}
+        var: config
+      - forEach: ${configurations.toSecretEnvsByContainer()}
+        id: secret-env-external
+        template:
+          apiVersion: external-secrets.io/v1
+          kind: ExternalSecret
+          metadata:
+            name: ${secretEnv.resourceName}
+            namespace: ${metadata.namespace}
+          spec:
+            data: |
+              ${secretEnv.envs.map(secret, {
+                "secretKey": secret.name,
+                "remoteRef": {
+                  "key": secret.remoteRef.key,
+                  "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
+                }
+              })}
+            refreshInterval: 15s
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: ${dataplane.secretStore}
+            target:
+              creationPolicy: Owner
+              name: ${secretEnv.resourceName}
+        var: secretEnv
+      - forEach: ${configurations.toSecretFileList()}
+        id: secret-file-external
+        template:
+          apiVersion: external-secrets.io/v1
+          kind: ExternalSecret
+          metadata:
             name: ${file.resourceName}
-      var: file
-    parameters:
-      openAPIV3Schema:
-        type: object
-        properties:
-          port:
-            type: integer
-            default: 4222
-    environmentConfigs:
-      openAPIV3Schema:
-        type: object
-        $defs:
-          ResourceQuantity:
-            type: object
-            properties:
-              cpu:
-                type: string
-                default: "100m"
-              memory:
-                type: string
-                default: "256Mi"
-          ResourceRequirements:
-            type: object
-            properties:
-              requests:
-                $ref: "#/$defs/ResourceQuantity"
-                default: {}
-              limits:
-                $ref: "#/$defs/ResourceQuantity"
-                default: {}
-        properties:
-          replicas:
-            type: integer
-            default: 1
-          resources:
-            $ref: "#/$defs/ResourceRequirements"
-            default: {}
-          imagePullPolicy:
-            type: string
-            default: IfNotPresent
-    workloadType: deployment
+            namespace: ${metadata.namespace}
+          spec:
+            data:
+            - remoteRef:
+                key: ${file.remoteRef.key}
+                property: |
+                  ${has(file.remoteRef.property) ? file.remoteRef.property : oc_omit()}
+              secretKey: ${file.name}
+            refreshInterval: 15s
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: ${dataplane.secretStore}
+            target:
+              creationPolicy: Owner
+              name: ${file.resourceName}
+        var: file
+      parameters:
+        openAPIV3Schema:
+          type: object
+          properties:
+            port:
+              type: integer
+              default: 4222
+      environmentConfigs:
+        openAPIV3Schema:
+          type: object
+          $defs:
+            ResourceQuantity:
+              type: object
+              properties:
+                cpu:
+                  type: string
+                  default: "100m"
+                memory:
+                  type: string
+                  default: "256Mi"
+            ResourceRequirements:
+              type: object
+              properties:
+                requests:
+                  $ref: "#/$defs/ResourceQuantity"
+                  default: {}
+                limits:
+                  $ref: "#/$defs/ResourceQuantity"
+                  default: {}
+          properties:
+            replicas:
+              type: integer
+              default: 1
+            resources:
+              $ref: "#/$defs/ResourceRequirements"
+              default: {}
+            imagePullPolicy:
+              type: string
+              default: IfNotPresent
+      workloadType: deployment
   owner:
     componentName: nats
     projectName: doclet
