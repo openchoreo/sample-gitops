@@ -188,7 +188,9 @@ spec:
     componentName: postgres
     projectName: doclet
   traits:
-    persistent-volume:
+  - kind: Trait
+    name: persistent-volume
+    spec:
       creates:
       - template:
           apiVersion: v1
