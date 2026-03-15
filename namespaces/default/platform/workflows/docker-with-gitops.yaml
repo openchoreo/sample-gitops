@@ -8,7 +8,7 @@ metadata:
 spec:
   # Template Variable Reference (processed by controller):
   # ${metadata.workflowRunName}  - WorkflowRun CR name
-  # ${metadata.namespace}    - Namespace name
+  # ${metadata.namespace}    - Enforced workflow namespace (workflows-<namespaceName>)
   # ${parameters.*}              - Developer-provided values from parameters schema
 
   # Schema definition for component workflows
@@ -72,7 +72,7 @@ spec:
     kind: Workflow
     metadata:
       name: ${metadata.workflowRunName}
-      namespace: workflows-${metadata.namespace}
+      namespace: ${metadata.namespace}
     spec:
       arguments:
         parameters:
@@ -128,7 +128,7 @@ spec:
         kind: ExternalSecret
         metadata:
           name: ${metadata.workflowRunName}-source-git-secret
-          namespace: workflows-${metadata.namespace}
+          namespace: ${metadata.namespace}
         spec:
           refreshInterval: 15s
           secretStoreRef:
@@ -148,7 +148,7 @@ spec:
         kind: ExternalSecret
         metadata:
           name: ${metadata.workflowRunName}-gitops-git-secret
-          namespace: workflows-${metadata.namespace}
+          namespace: ${metadata.namespace}
         spec:
           refreshInterval: 15s
           secretStoreRef:
