@@ -15,7 +15,7 @@ spec:
     image: host.k3d.internal:10082/doclet-document-svc-image:v1-4a2acc61
   endpoints:
     http:
-      type: REST
+      type: HTTP
       port: 8080
       visibility: [external]
   dependencies:

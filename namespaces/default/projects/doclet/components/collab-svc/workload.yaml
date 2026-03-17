@@ -11,7 +11,7 @@ spec:
     image: temp-image-placeholder
   endpoints:
     http:
-      type: REST
+      type: HTTP
       port: 8090
   dependencies:
     endpoints:
