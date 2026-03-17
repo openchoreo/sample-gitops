@@ -63,7 +63,7 @@ spec:
       arguments:
         parameters:
           - name: namespace-name
-            value: ${metadata.namespace}
+            value: ${metadata.namespaceName}
           # Scope parameters
           - name: scope-all
             value: ${parameters.scope.all}

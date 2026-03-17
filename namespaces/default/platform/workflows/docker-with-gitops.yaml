@@ -81,7 +81,7 @@ spec:
           - name: project-name
             value: ${parameters.projectName}
           - name: namespace-name
-            value: ${metadata.namespace}
+            value: ${metadata.namespaceName}
           # Source repository parameters
           - name: git-repo
             value: ${parameters.repository.url}
