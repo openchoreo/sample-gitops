@@ -8,6 +8,7 @@ This repository demonstrates how to use OpenChoreo in a GitOps-driven workflow. 
 - [Setting Up the GitOps Repository](#setting-up-the-gitops-repository)
 - [Create Git Secrets](#create-git-secrets-in-the-openchoreo-key-vault)
 - [Deploy the GitOps Sample](#deploy-the-gitops-sample)
+- [Available Workflows](#available-workflows)
 - [Build and Deploy Components](#build-and-deploy-components)
 - [Try Out the Sample](#try-out-the-sample)
 - [Promote to Staging](#promote-components-to-staging)
@@ -40,6 +41,8 @@ kubectl apply -f https://github.com/fluxcd/flux2/releases/latest/download/instal
 2. **Update the GitOps repository URL** in the following files to point to your fork, then commit and push the changes to your forked repository:
    - [`flux/gitrepository.yaml`](./flux/gitrepository.yaml) — update the `spec.url` field
    - [`namespaces/default/platform/workflows/docker-with-gitops.yaml`](./namespaces/default/platform/workflows/docker-with-gitops.yaml) — update the `gitops-repo-url` parameter
+   - [`namespaces/default/platform/workflows/google-cloud-buildpacks-gitops-release.yaml`](./namespaces/default/platform/workflows/google-cloud-buildpacks-gitops-release.yaml) — update the `gitops-repo-url` parameter
+   - [`namespaces/default/platform/workflows/react-gitops-release.yaml`](./namespaces/default/platform/workflows/react-gitops-release.yaml) — update the `gitops-repo-url` parameter
 
 3. **Generate a GitHub Personal Access Token (PAT)** with read/write access to your forked repository.
 
@@ -70,6 +73,25 @@ kubectl apply -f flux/
 ```
 
 Flux will now watch this repository and apply any changes to your cluster automatically.
+
+---
+
+## Available Workflows
+
+This repository includes four GitOps workflows for building, releasing, and promoting components:
+
+| Workflow | When to Use |
+|---|---|
+| **docker-gitops-release** | Source repo has a Dockerfile — works with any language |
+| **google-cloud-buildpacks-gitops-release** | Source repo has no Dockerfile — auto-detects Go, Java, Node.js, Python, .NET, Ruby, PHP |
+| **react-gitops-release** | React or SPA apps — builds with Node.js and packages into nginx |
+| **bulk-gitops-release** | Promote existing releases to a target environment (no build) |
+
+The three build-and-release workflows (docker, buildpacks, react) clone your source code, build a container image, push it to the registry, and create a pull request in this GitOps repository with the generated Workload, ComponentRelease, and ReleaseBinding manifests.
+
+The bulk release workflow generates ReleaseBindings to promote already-built components across environments (e.g., development to staging).
+
+For detailed parameters and usage examples, see the [workflows README](./namespaces/default/platform/workflows/README.md).
 
 ---
 
