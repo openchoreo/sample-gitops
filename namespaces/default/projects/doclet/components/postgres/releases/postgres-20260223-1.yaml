@@ -42,7 +42,7 @@ spec:
                     ${has(workload.container.args) ? workload.container.args : oc_omit()}
                   command: |
                     ${has(workload.container.command) ? workload.container.command : oc_omit()}
-                  env: ${connections.toContainerEnv()}
+                  env: ${dependencies.toContainerEnvs()}
                   envFrom: ${configurations.toContainerEnvFrom()}
                   image: ${workload.container.image}
                   imagePullPolicy: ${environmentConfigs.imagePullPolicy}
@@ -113,7 +113,7 @@ spec:
                 "secretKey": secret.name,
                 "remoteRef": {
                   "key": secret.remoteRef.key,
-                  "property": has(secret.remoteRef.property) ? secret.remoteRef.property : oc_omit()
+                  ?"property": secret.remoteRef.?property
                 }
               })}
             refreshInterval: 15s
