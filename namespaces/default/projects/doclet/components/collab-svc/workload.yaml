@@ -8,18 +8,18 @@ spec:
     env:
     - key: DOCLET_COLLAB_ADDR
       value: :8090
-    image: temp-image-placeholder
-  endpoints:
-    http:
-      type: HTTP
-      port: 8090
+    image: host.k3d.internal:10082/doclet-collab-svc-image:v1-e0458407
   dependencies:
     endpoints:
-      - component: nats
-        name: tcp
-        visibility: project
-        envBindings:
-          address: DOCLET_NATS_URL
+    - component: nats
+      envBindings:
+        address: DOCLET_NATS_URL
+      name: tcp
+      visibility: project
+  endpoints:
+    http:
+      port: 8090
+      type: HTTP
   owner:
     componentName: collab-svc
     projectName: doclet

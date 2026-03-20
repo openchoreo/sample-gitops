@@ -1,0 +1,11 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ReleaseBinding
+metadata:
+  name: collab-svc-development
+  namespace: default
+spec:
+  environment: development
+  owner:
+    componentName: collab-svc
+    projectName: doclet
+  releaseName: collab-svc-e0458407
