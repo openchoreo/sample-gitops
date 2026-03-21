@@ -1,84 +1,84 @@
 # Sample GitOps for OpenChoreo
 
-This repository demonstrates how to use OpenChoreo in a GitOps-driven workflow. It includes Flux configurations, workflow definitions, and platform resources to build and deploy sample components using OpenChoreo's CI/CD capabilities.
+This repository demonstrates how to use [OpenChoreo](https://openchoreo.dev/) in a GitOps-driven workflow. It includes workflow definitions, platform resources, and CD tool configurations to build and deploy sample components using OpenChoreo's CI/CD capabilities.
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Setting Up the GitOps Repository](#setting-up-the-gitops-repository)
-- [Create Git Secrets](#create-git-secrets-in-the-openchoreo-key-vault)
-- [Deploy the GitOps Sample](#deploy-the-gitops-sample)
-- [Available Workflows](#available-workflows)
-- [Build and Deploy Components](#build-and-deploy-components)
-- [Try Out the Sample](#try-out-the-sample)
-- [Promote to Staging](#promote-components-to-staging)
+- [Repository Structure](#repository-structure)
+- [Available Workflows for Automation](#available-workflows-for-automation)
+- [Key Concepts](#key-concepts)
+- [Tutorials](#tutorials)
 
 ---
 
-## Prerequisites
+## Repository Structure
 
-### 1. Install OpenChoreo
+The repository separates platform-level resources from application resources:
 
-Follow the official documentation: [Try it out on k3d locally](https://openchoreo.dev/docs/next/getting-started/try-it-out/on-k3d-locally/)
-
-> [!WARNING]
-> Do **not** install the OpenChoreo default resources. Only create the **default dataplane** and **build plane**.
-
-### 2. Install Flux
-
-Follow the [official Flux installation guide](https://fluxcd.io/flux/installation/#dev-install), or run:
-
-```bash
-kubectl apply -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
+```
+.
+├── flux/                                    # Flux CD configuration
+│   ├── gitrepository.yaml                  # Repository pointer
+│   ├── namespaces-kustomization.yaml       # Namespace syncing
+│   ├── platform-shared-kustomization.yaml  # Cluster resources
+│   ├── oc-demo-platform-kustomization.yaml # Platform resources
+│   └── oc-demo-projects-kustomization.yaml # Application resources
+├── platform-shared/                        # Cluster-scoped resources
+│   └── cluster-workflow-templates/
+│       └── argo/
+│           ├── docker-with-gitops-release.yaml
+│           ├── google-cloud-buildpacks-gitops-release-template.yaml
+│           ├── react-gitops-release-template.yaml
+│           └── bulk-gitops-release-template.yaml
+└── namespaces/                             # Namespace-scoped resources
+    └── <namespace>/
+        ├── namespace.yaml
+        ├── platform/                       # Platform team resources
+        │   ├── infra/
+        │   │   ├── deployment-pipelines/
+        │   │   │   └── standard.yaml
+        │   │   └── environments/
+        │   │       ├── development.yaml
+        │   │       ├── staging.yaml
+        │   │       └── production.yaml
+        │   ├── component-types/
+        │   │   ├── service.yaml
+        │   │   ├── webapp.yaml
+        │   │   ├── database.yaml
+        │   │   └── message-broker.yaml
+        │   ├── traits/
+        │   │   ├── persistent-volume.yaml
+        │   │   ├── api-management.yaml
+        │   │   └── observability-alert-rule.yaml
+        │   └── workflows/
+        │       ├── bulk-gitops-release.yaml
+        │       ├── docker-with-gitops.yaml
+        │       ├── google-cloud-buildpacks-gitops-release.yaml
+        │       └── react-gitops-release.yaml
+        └── projects/                       # Development team resources
+            └── <project-name>/
+                ├── project.yaml
+                └── components/
+                    └── <component-name>/
+                        ├── component.yaml
+                        ├── workload.yaml
+                        ├── releases/
+                        │   └── <component>-<date>-<revision>.yaml
+                        └── release-bindings/
+                            ├── <component>-development.yaml
+                            └── <component>-staging.yaml
 ```
 
----
+**Key notes:**
 
-## Setting Up the GitOps Repository
-
-1. **Fork this repository.**
-
-2. **Update the GitOps repository URL** in the following files to point to your fork, then commit and push the changes to your forked repository:
-   - [`flux/gitrepository.yaml`](./flux/gitrepository.yaml) — update the `spec.url` field
-   - [`namespaces/default/platform/workflows/docker-with-gitops.yaml`](./namespaces/default/platform/workflows/docker-with-gitops.yaml) — update the `gitops-repo-url` parameter
-   - [`namespaces/default/platform/workflows/google-cloud-buildpacks-gitops-release.yaml`](./namespaces/default/platform/workflows/google-cloud-buildpacks-gitops-release.yaml) — update the `gitops-repo-url` parameter
-   - [`namespaces/default/platform/workflows/react-gitops-release.yaml`](./namespaces/default/platform/workflows/react-gitops-release.yaml) — update the `gitops-repo-url` parameter
-
-3. **Generate a GitHub Personal Access Token (PAT)** with read/write access to your forked repository.
+- The `platform/` directory syncs first, ensuring Environments, DataPlanes, and ComponentTypes exist before Components. The CD tool enforces ordering through dependency configuration.
+- The `platform-shared/` directory contains cluster-scoped resources such as Argo ClusterWorkflowTemplates. In production setups, this would also include ClusterComponentTypes, ClusterTraits, ClusterDataPlanes, and ClusterAuthzRoles.
 
 ---
 
-## Create Git Secrets in the OpenChoreo Key Vault
+## Available Workflows for Automation
 
-Store your GitHub PAT in the OpenBao secret store so OpenChoreo workflows can access your repositories:
-
-```bash
-# Secret for cloning source repositories
-kubectl exec -n openbao openbao-0 -- bao kv put secret/git-token git-token=<your_github_pat>
-
-# Secret for pushing to and creating PRs in the GitOps repository
-kubectl exec -n openbao openbao-0 -- bao kv put secret/gitops-token git-token=<your_github_pat>
-```
-
-Replace `<your_github_pat>` with your actual token.
-
----
-
-## Deploy the GitOps Sample
-
-Apply the Flux resources to start syncing this repository with your cluster:
-
-```bash
-kubectl apply -f flux/
-```
-
-Flux will now watch this repository and apply any changes to your cluster automatically.
-
----
-
-## Available Workflows
-
-This repository includes four GitOps workflows for building, releasing, and promoting components:
+This repository includes OpenChoreo Workflow definitions that automate the end-to-end GitOps lifecycle — building container images, releasing components, and promoting them across environments — all driven through pull requests:
 
 | Workflow | When to Use |
 |---|---|
@@ -95,147 +95,26 @@ For detailed parameters and usage examples, see the [workflows README](./namespa
 
 ---
 
-## Build and Deploy Components
+## Key Concepts
 
-Trigger the build and release workflows for each component in the **Doclet** sample application. Each `WorkflowRun` builds a container image and creates a pull request in your GitOps repository targeting the **development** environment.
+Deploying a component to an environment in OpenChoreo requires the following resources:
 
-### Document Service
+1. **ComponentRelease** — an immutable snapshot capturing the exact Component state, ComponentType, and Workload at a specific point in time.
+2. **ReleaseBinding** — binds a ComponentRelease to a specific Environment, triggering OpenChoreo to render and deploy the actual Kubernetes resources (Deployment, Service, etc.).
 
-```bash
-kubectl apply -f - <<EOF
-apiVersion: openchoreo.dev/v1alpha1
-kind: WorkflowRun
-metadata:
-  name: document-svc-manual-01
-  namespace: default
-  labels:
-    openchoreo.dev/project: "doclet"
-    openchoreo.dev/component: "document-svc"
-spec:
-  workflow:
-    name: docker-gitops-release
-    kind: Workflow
-    parameters:
-      componentName: document-svc
-      projectName: doclet
-      docker:
-        context: /project-doclet-app/service-go-document
-        filePath: /project-doclet-app/service-go-document/Dockerfile
-      repository:
-        appPath: /project-doclet-app/service-go-document
-        revision:
-          branch: main
-          commit: ""
-        url: https://github.com/openchoreo/sample-workloads.git
-      workloadDescriptorPath: workload.yaml
-EOF
-```
+In a GitOps workflow, all resources are committed as YAML manifests. The build-and-release workflows generate these manifests and create pull requests. Once merged, the CD tool automatically synchronizes them to the cluster.
 
-### Collaboration Service
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: openchoreo.dev/v1alpha1
-kind: WorkflowRun
-metadata:
-  name: collab-svc-manual-01
-  namespace: default
-  labels:
-    openchoreo.dev/project: "doclet"
-    openchoreo.dev/component: "collab-svc"
-spec:
-  workflow:
-    kind: Workflow
-    name: docker-gitops-release
-    parameters:
-      componentName: collab-svc
-      projectName: doclet
-      docker:
-        context: /project-doclet-app/service-go-collab
-        filePath: /project-doclet-app/service-go-collab/Dockerfile
-      repository:
-        appPath: /project-doclet-app/service-go-collab
-        revision:
-          branch: main
-          commit: ""
-        url: https://github.com/openchoreo/sample-workloads.git
-      workloadDescriptorPath: workload.yaml
-EOF
-```
-
-### Frontend
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: openchoreo.dev/v1alpha1
-kind: WorkflowRun
-metadata:
-  name: frontend-workflow-manual-01
-  namespace: default
-  labels:
-    openchoreo.dev/project: "doclet"
-    openchoreo.dev/component: "frontend"
-spec:
-  workflow:
-    kind: Workflow
-    name: docker-gitops-release
-    parameters:
-      componentName: frontend
-      projectName: doclet
-      docker:
-        context: /project-doclet-app/webapp-react-frontend
-        filePath: /project-doclet-app/webapp-react-frontend/Dockerfile
-      repository:
-        appPath: /project-doclet-app/webapp-react-frontend
-        revision:
-          branch: main
-          commit: ""
-        url: https://github.com/openchoreo/sample-workloads.git
-      workloadDescriptorPath: workload.yaml
-EOF
-```
-
-
-> [!NOTE]
-> The source code for the Doclet sample application is available at [openchoreo/sample-workloads](https://github.com/openchoreo/sample-workloads/tree/main/project-doclet-app).
-
-### Merge the Pull Requests
-
-Once all three workflows complete, **3 pull requests** will be created in your forked GitOps repository — one for each component. Review and merge them, then wait for Flux to sync and deploy the components to your cluster.
+To deploy the same release to additional environments, create new ReleaseBinding manifests referencing the same ComponentRelease but targeting different environments. This demonstrates the ReleaseBinding model: **one immutable release, multiple environments**.
 
 ---
 
-## Try Out the Sample
+## Tutorials
 
-Once Flux has synced the merged changes, the Doclet application components will be running in your cluster. You can explore the deployed services and frontend through the OpenChoreo platform.
+Choose a CD tool to get started with a complete end-to-end tutorial:
 
----
+| CD Tool     | Tutorial                                | Status    |
+|-------------|-----------------------------------------|-----------|
+| **Flux CD** | [GitOps with Flux CD](./flux/README.md) | Available |
+| **Argo CD** | Coming soon                             | Planned   |
 
-## Promote Components to Staging
-
-After validating in the development environment, promote the entire **Doclet** project to staging using the bulk release workflow:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: openchoreo.dev/v1alpha1
-kind: WorkflowRun
-metadata:
-  name: bulk-release-manual-01
-  namespace: default
-spec:
-  workflow:
-    kind: Workflow
-    name: bulk-gitops-release
-    parameters:
-      scope:
-        all: false
-        projectName: "doclet"
-      gitops:
-        repositoryUrl: "https://github.com/<your-github-username>/sample-gitops"
-        branch: "main"
-        targetEnvironment: "staging"
-        deploymentPipeline: "standard"
-EOF
-```
-
-Replace `<your-github-username>` with your GitHub username. Once the workflow completes, a pull request will be created in your forked GitOps repository to promote all Doclet components from development to staging in a single operation. Merge the PR and wait for Flux to sync the changes to your cluster.
+Each tutorial walks you through forking this repository, configuring the CD tool, building and deploying the sample Doclet application, and promoting components across environments.
