@@ -1,13 +1,13 @@
 apiVersion: openchoreo.dev/v1alpha1
-kind: ComponentType
+kind: ClusterComponentType
 metadata:
   name: database
-  namespace: default
 spec:
   workloadType: deployment
 
   allowedTraits:
-    - name: persistent-volume
+    - kind: ClusterTrait
+      name: persistent-volume
 
   parameters:
     openAPIV3Schema:

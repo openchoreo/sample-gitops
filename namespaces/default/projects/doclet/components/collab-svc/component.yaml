@@ -9,7 +9,7 @@ spec:
 
   componentType:
     name: deployment/service
-    kind: ComponentType
+    kind: ClusterComponentType
 
   autoBuild: true
 

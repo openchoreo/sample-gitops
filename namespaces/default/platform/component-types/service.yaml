@@ -1,8 +1,7 @@
 apiVersion: openchoreo.dev/v1alpha1
-kind: ComponentType
+kind: ClusterComponentType
 metadata:
   name: service
-  namespace: default
 spec:
   workloadType: deployment
 
@@ -11,8 +10,10 @@ spec:
       name: docker-gitops-release
 
   allowedTraits:
-    - name: api-configuration
-    - name: observability-alert-rule
+    - kind: ClusterTrait
+      name: api-configuration
+    - kind: ClusterTrait
+      name: observability-alert-rule
 
   validations:
     - rule: "${size(workload.endpoints) > 0}"

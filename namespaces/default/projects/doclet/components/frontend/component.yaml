@@ -9,7 +9,7 @@ spec:
 
   componentType:
     name: deployment/web-application
-    kind: ComponentType
+    kind: ClusterComponentType
   autoBuild: true
 
   workflow:

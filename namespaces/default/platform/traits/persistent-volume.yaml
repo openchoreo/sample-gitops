@@ -1,8 +1,7 @@
 apiVersion: openchoreo.dev/v1alpha1
-kind: Trait
+kind: ClusterTrait
 metadata:
   name: persistent-volume
-  namespace: default
 spec:
   parameters:
     openAPIV3Schema:

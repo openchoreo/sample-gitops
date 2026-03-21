@@ -9,7 +9,7 @@ spec:
 
   componentType:
     name: deployment/message-broker
-    kind: ComponentType
+    kind: ClusterComponentType
 
   parameters:
     replicas: 1

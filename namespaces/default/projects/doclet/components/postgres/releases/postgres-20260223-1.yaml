@@ -10,14 +10,14 @@ spec:
       replicas: 1
     traits:
     - instanceName: data-storage
-      kind: Trait
+      kind: ClusterTrait
       name: persistent-volume
       parameters:
         containerName: main
         mountPath: /var/lib/postgresql/data
         volumeName: pg-data
   componentType:
-    kind: ComponentType
+    kind: ClusterComponentType
     name: database
     spec:
       resources:
@@ -191,7 +191,7 @@ spec:
     componentName: postgres
     projectName: doclet
   traits:
-  - kind: Trait
+  - kind: ClusterTrait
     name: persistent-volume
     spec:
       creates:

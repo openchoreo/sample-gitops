@@ -1,8 +1,7 @@
 apiVersion: openchoreo.dev/v1alpha1
-kind: ComponentType
+kind: ClusterComponentType
 metadata:
   name: message-broker
-  namespace: default
 spec:
   workloadType: deployment
 

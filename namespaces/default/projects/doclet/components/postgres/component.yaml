@@ -9,7 +9,7 @@ spec:
 
   componentType:
     name: deployment/database
-    kind: ComponentType
+    kind: ClusterComponentType
 
   parameters:
     replicas: 1
@@ -17,7 +17,7 @@ spec:
 
   traits:
     - name: persistent-volume
-      kind: Trait
+      kind: ClusterTrait
       instanceName: data-storage
       parameters:
         volumeName: pg-data

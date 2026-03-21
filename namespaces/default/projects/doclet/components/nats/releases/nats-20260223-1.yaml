@@ -9,7 +9,7 @@ spec:
       port: 4222
       replicas: 1
   componentType:
-    kind: ComponentType
+    kind: ClusterComponentType
     name: web-application
     spec:
       resources:
