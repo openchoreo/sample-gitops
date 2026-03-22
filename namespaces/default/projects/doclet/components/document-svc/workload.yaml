@@ -9,27 +9,28 @@ spec:
     - key: DOCLET_DOCUMENT_ADDR
       value: :8080
     - key: DB_PASSWORD
-      value: "doclet"
+      value: doclet
     - key: DB_USER
-      value: "doclet"
-    image: host.k3d.internal:10082/doclet-document-svc-image:v1-4a2acc61
-  endpoints:
-    http:
-      type: HTTP
-      port: 8080
-      visibility: [external]
+      value: doclet
+    image: host.k3d.internal:10082/doclet-document-svc-image:v1-e0458407
   dependencies:
     endpoints:
-      - component: postgres
-        name: tcp
-        visibility: project
-        envBindings:
-          address: DOCLET_DATABASE_URL
-      - component: nats
-        name: tcp
-        visibility: project
-        envBindings:
-          address: DOCLET_NATS_URL
+    - component: postgres
+      envBindings:
+        address: DOCLET_DATABASE_URL
+      name: tcp
+      visibility: project
+    - component: nats
+      envBindings:
+        address: DOCLET_NATS_URL
+      name: tcp
+      visibility: project
+  endpoints:
+    http:
+      port: 8080
+      type: HTTP
+      visibility:
+      - external
   owner:
     componentName: document-svc
     projectName: doclet
