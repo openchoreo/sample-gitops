@@ -29,7 +29,7 @@ This tutorial walks through setting up a complete GitOps workflow using OpenChor
 
 ### Install OpenChoreo
 
-Follow the official documentation: [Try it out on k3d locally](https://openchoreo.dev/docs/next/getting-started/try-it-out/on-k3d-locally/)
+Follow the official documentation: [Try it out on k3d locally](https://openchoreo.dev/docs/getting-started/try-it-out/on-k3d-locally/)
 
 > [!WARNING]
 > Do **not** install the OpenChoreo default resources. Only create the **default clusterdataplane** and **clusterworkflowplane**.
