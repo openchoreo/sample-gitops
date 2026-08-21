@@ -14,12 +14,10 @@ spec:
       type: HTTP
       port: 8090
   dependencies:
-    endpoints:
-      - component: nats
-        name: tcp
-        visibility: project
+    resources:
+      - ref: doclet-nats
         envBindings:
-          address: DOCLET_NATS_URL
+          url: DOCLET_NATS_URL
   owner:
     componentName: collab-svc
     projectName: doclet

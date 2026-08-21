@@ -1,0 +1,13 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ResourceReleaseBinding
+metadata:
+  name: doclet-nats-development
+  namespace: default
+spec:
+  owner:
+    projectName: doclet
+    resourceName: doclet-nats
+  environment: development
+  retainPolicy: Delete
+  resourceTypeEnvironmentConfigs:
+    adminEnabled: false
