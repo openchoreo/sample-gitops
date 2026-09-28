@@ -1,0 +1,12 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ProjectReleaseBinding
+metadata:
+  name: doclet-staging
+  namespace: default
+  labels:
+    openchoreo.dev/project: doclet
+    openchoreo.dev/environment: staging
+spec:
+  owner:
+    projectName: doclet
+  environment: staging

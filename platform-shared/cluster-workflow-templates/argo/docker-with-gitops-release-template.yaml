@@ -71,6 +71,13 @@ spec:
 
     # Step 1: Clone source repository (supports private repos via git token)
     - name: clone-source
+      retryStrategy:
+        limit: "5"
+        retryPolicy: OnFailure
+        backoff:
+          duration: "5s"
+          factor: "2"
+          maxDuration: "30s"
       container:
         image: alpine/git
         command: [sh, -c]
@@ -527,6 +534,7 @@ spec:
     - name: source-git-credentials
       secret:
         secretName: '{{workflow.parameters.source-git-secret}}'
+        optional: true
     - name: gitops-git-credentials
       secret:
         secretName: '{{workflow.parameters.gitops-git-secret}}'

@@ -1,0 +1,12 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ProjectReleaseBinding
+metadata:
+  name: doclet-production
+  namespace: default
+  labels:
+    openchoreo.dev/project: doclet
+    openchoreo.dev/environment: production
+spec:
+  owner:
+    projectName: doclet
+  environment: production

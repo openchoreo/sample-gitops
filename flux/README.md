@@ -34,6 +34,9 @@ Follow the official documentation: [Try it out on k3d locally](https://openchore
 > [!WARNING]
 > Do **not** install the OpenChoreo default resources. Only create the **default clusterdataplane** and **clusterworkflowplane**.
 
+> [!IMPORTANT]
+> The `main` branch of this repository requires OpenChoreo **v1.2.0 or later**. For earlier versions, use the [`release-v1.0`](https://github.com/openchoreo/sample-gitops/tree/release-v1.0) branch.
+
 ### Required Tools
 
 - `kubectl` configured for cluster access
@@ -96,6 +99,9 @@ Update the `gitops-repo-url` parameter in each of the following workflow files t
 - [`namespaces/default/platform/workflows/react-gitops-release.yaml`](../namespaces/default/platform/workflows/react-gitops-release.yaml)
 
 Commit and push all URL changes to your forked repository.
+
+> [!NOTE]
+> Only the GitOps repository URLs above point to your fork. The `repository.url` in the Doclet Component manifests and in the Step 6 WorkflowRuns refers to the application source code and stays as `https://github.com/openchoreo/sample-workloads.git`.
 
 ### 2.3 Generate a GitHub PAT
 
@@ -182,9 +188,28 @@ Within 1-2 minutes, Flux will sync the platform directory. Verify the platform r
 kubectl get environments              # development, staging, production
 kubectl get deploymentpipelines       # standard
 kubectl get componenttypes            # deployment/service, deployment/web-application, deployment/database, deployment/message-broker
+kubectl get projecttypes              # default
 ```
 
 The `standard` DeploymentPipeline defines the promotion sequence: **development** -> **staging** -> **production**.
+
+Flux then syncs the `projects/` directory. Verify that all Kustomizations are ready and the Doclet project, its components and its resources exist:
+
+```bash
+kubectl get kustomization -n flux-system   # all READY=True
+kubectl get projects                       # doclet
+kubectl get projectreleasebindings         # doclet-development, doclet-staging, doclet-production
+kubectl get components                     # collab-svc, document-svc, frontend
+kubectl get resources                      # doclet-nats, doclet-postgres
+```
+
+If a Kustomization is not ready, its status message names the manifest that failed to apply:
+
+```bash
+kubectl describe kustomization -n flux-system oc-demo-projects
+```
+
+Each ProjectReleaseBinding provisions the project's namespace in its environment. Components are deployed into that namespace, so the bindings must be ready before the ReleaseBindings in Step 6 can deploy.
 
 ---
 
@@ -305,6 +330,30 @@ kubectl get releasebindings
 kubectl get deployments -A
 kubectl get pods -A
 ```
+
+### 6.6 Troubleshooting
+
+If a WorkflowRun does not progress, check its status and tasks:
+
+```bash
+kubectl get workflowrun <workflowrun-name> -o yaml
+```
+
+The workflows read your GitHub PAT from OpenBao through ExternalSecrets created for each run. If a step stays pending, the pod is usually waiting for a git credentials Secret that has not been synced. Check that the ClusterSecretStore is ready and the run's ExternalSecrets are synced:
+
+```bash
+kubectl get clustersecretstore default
+kubectl get externalsecret -A | grep <workflowrun-name>
+```
+
+If an ExternalSecret reports `SecretSyncedError`, confirm that the keys from [Step 3](#step-3-create-git-secrets) exist in OpenBao:
+
+```bash
+kubectl exec -n openbao openbao-0 -- bao kv get -field=git-token secret/git-token > /dev/null
+kubectl exec -n openbao openbao-0 -- bao kv get -field=git-token secret/gitops-token > /dev/null
+```
+
+The source repository token is optional for public repositories. The GitOps token is always required, because the workflow pushes a branch and opens a pull request in your fork.
 
 ---
 

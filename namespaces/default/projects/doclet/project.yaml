@@ -12,5 +12,5 @@ spec:
   deploymentPipelineRef:
     name: standard
   type:
-    kind: ClusterProjectType
+    kind: ProjectType
     name: default
