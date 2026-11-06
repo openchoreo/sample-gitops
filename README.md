@@ -24,6 +24,9 @@ The repository separates platform-level resources from application resources:
 │   ├── oc-demo-platform-kustomization.yaml # Platform resources
 │   └── oc-demo-projects-kustomization.yaml # Application resources
 ├── platform-shared/                        # Cluster-scoped resources
+│   ├── cluster-resource-types/
+│   │   ├── nats.yaml
+│   │   └── postgres.yaml
 │   └── cluster-workflow-templates/
 │       └── argo/
 │           ├── docker-with-gitops-release.yaml
@@ -72,7 +75,7 @@ The repository separates platform-level resources from application resources:
 **Key notes:**
 
 - The `platform/` directory syncs first, ensuring Environments, DataPlanes, and ComponentTypes exist before Components. The CD tool enforces ordering through dependency configuration.
-- The `platform-shared/` directory contains cluster-scoped resources such as Argo ClusterWorkflowTemplates. In production setups, this would also include ClusterComponentTypes, ClusterTraits, ClusterDataPlanes, and ClusterAuthzRoles.
+- The `platform-shared/` directory contains cluster-scoped resources such as the `nats` and `postgres` ClusterResourceTypes used by the Doclet resources, and Argo ClusterWorkflowTemplates. In production setups, this would also include ClusterComponentTypes, ClusterTraits, ClusterDataPlanes, and ClusterAuthzRoles.
 
 ---
 

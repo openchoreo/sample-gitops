@@ -8,6 +8,11 @@ spec:
     projectName: doclet
     resourceName: doclet-nats
   environment: development
+  # The Resource controller names releases <resource>-<hash>, where the hash covers the
+  # Resource spec and platform-shared/cluster-resource-types/nats.yaml. Update this pin
+  # (kubectl get resource doclet-nats -o jsonpath='{.status.latestRelease.name}')
+  # whenever either of them changes.
+  resourceRelease: doclet-nats-844b9c778f
   retainPolicy: Delete
   resourceTypeEnvironmentConfigs:
     adminEnabled: false
