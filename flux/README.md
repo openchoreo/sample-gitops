@@ -35,7 +35,7 @@ Follow the official documentation: [Try it out on k3d locally](https://openchore
 > Do **not** install the OpenChoreo default resources. Only create the **default clusterdataplane** and **clusterworkflowplane**.
 
 > [!IMPORTANT]
-> The `main` branch of this repository requires OpenChoreo **v1.2.0 or later**. For earlier versions, use the [`release-v1.0`](https://github.com/openchoreo/sample-gitops/tree/release-v1.0) branch.
+> The `main` branch of this repository requires OpenChoreo **v1.3.0 or later**. For earlier versions, use the [`release-v1.0`](https://github.com/openchoreo/sample-gitops/tree/release-v1.0) branch.
 
 ### Required Tools
 
@@ -189,6 +189,7 @@ kubectl get environments              # development, staging, production
 kubectl get deploymentpipelines       # standard
 kubectl get componenttypes            # deployment/service, deployment/web-application, deployment/database, deployment/message-broker
 kubectl get projecttypes              # default
+kubectl get clusterresourcetypes      # nats, postgres
 ```
 
 The `standard` DeploymentPipeline defines the promotion sequence: **development** -> **staging** -> **production**.
@@ -201,7 +202,10 @@ kubectl get projects                       # doclet
 kubectl get projectreleasebindings         # doclet-development, doclet-staging, doclet-production
 kubectl get components                     # collab-svc, document-svc, frontend
 kubectl get resources                      # doclet-nats, doclet-postgres
+kubectl get resourcereleasebindings        # doclet-nats-development, doclet-postgres-development (READY=True)
 ```
+
+Each ResourceReleaseBinding pins a ResourceRelease through `spec.resourceRelease`. The Resource controller names releases `<resource>-<hash>`, where the hash is computed from the Resource and its ClusterResourceType, so the pinned names stay valid as long as neither changes. If you modify either, update the pin to the new name reported by `kubectl get resource <name> -o jsonpath='{.status.latestRelease.name}'`.
 
 If a Kustomization is not ready, its status message names the manifest that failed to apply:
 
