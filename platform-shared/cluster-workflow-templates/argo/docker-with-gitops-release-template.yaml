@@ -132,7 +132,7 @@ spec:
         parameters:
           - name: git-revision
       container:
-        image: ghcr.io/openchoreo/podman-runner:v1.0
+        image: ghcr.io/openchoreo/podman-runner:v1.3
         command: [sh, -c]
         args:
           - |-
@@ -173,7 +173,7 @@ spec:
         parameters:
           - name: git-revision
       container:
-        image: ghcr.io/openchoreo/podman-runner:v1.0
+        image: ghcr.io/openchoreo/podman-runner:v1.3
         command: [sh, -c]
         args:
           - |-

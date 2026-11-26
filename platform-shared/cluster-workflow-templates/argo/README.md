@@ -28,7 +28,7 @@ Workflow CR (parameters, secrets, schema)
 | Image | Purpose |
 |---|---|
 | `alpine/git` | Git clone, branch, commit, push operations |
-| `ghcr.io/openchoreo/podman-runner:v1.0` | Docker image build and push (Podman) |
+| `ghcr.io/openchoreo/podman-runner:v1.3` | Docker image build and push (Podman) |
 | `ghcr.io/openchoreo/buildpacks-runner:v1.0` | Google Cloud Buildpacks build |
 | `ghcr.io/openchoreo/openchoreo-cli:latest-dev` | `occ` CLI for generating Workload, ComponentRelease, ReleaseBinding |
 | `node:<version>-alpine` | React application build |
