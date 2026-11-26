@@ -168,7 +168,6 @@ spec:
 
             # Build using pack CLI (Cloud Native Buildpacks)
             pack build $IMAGE \
-                --network host \
                 --builder $BUILDER_IMAGE \
                 --path $BUILD_PATH \
                 --docker-host inherit \
